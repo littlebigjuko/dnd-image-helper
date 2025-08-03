@@ -46,9 +46,22 @@
               v-for="(t, i) in tokenImages"
               :key="t.id"
             >
-              <button class="shared-token-item-remove" @click="remove(i)">
-                ×
-              </button>
+              <div class="shared-token-actions">
+                <button
+                  class="shared-token-duplicate"
+                  @click="duplicate(t.id)"
+                  title="Duplicate token"
+                >
+                  +
+                </button>
+                <button
+                  class="shared-token-item-remove"
+                  @click="remove(i)"
+                  title="Remove token"
+                >
+                  ×
+                </button>
+              </div>
               <img :src="t.image.src" :alt="t.name" />
               <div class="shared-token-item-name">{{ t.name }}</div>
             </div>
@@ -118,7 +131,7 @@ import { useTokenPdfGeneration } from '../composables/useTokenPdfGeneration';
 import { useTokenPreview } from '../composables/useTokenPreview';
 import { useTokenUpload } from '../composables/useTokenUpload';
 
-const { tokenImages, processFiles, removeToken, clearTokens } =
+const { tokenImages, processFiles, removeToken, duplicateToken, clearTokens } =
   useTokenUpload();
 const { tokenSize, perforationEdges, sheetLayout } = useTokenLayout();
 const { generatePreview, renderTokenSheet } = useTokenPreview();
@@ -141,6 +154,13 @@ async function onDrop(e) {
 function remove(i) {
   removeToken(i);
   drawPreview();
+}
+
+function duplicate(id) {
+  const success = duplicateToken(id);
+  if (success) {
+    drawPreview();
+  }
 }
 
 function drawPreview() {
@@ -169,3 +189,51 @@ watch([tokenImages, tokenSize, perforationEdges], () => {
   if (tokenImages.value.length) drawPreview();
 });
 </script>
+
+<style scoped>
+.shared-token-actions {
+  display: flex;
+  gap: 4px;
+  position: absolute;
+  top: 4px;
+  right: 4px;
+  z-index: 10;
+}
+
+.shared-token-duplicate,
+.shared-token-item-remove {
+  width: 20px;
+  height: 20px;
+  border: none;
+  border-radius: 50%;
+  color: white;
+  font-size: 14px;
+  font-weight: bold;
+  cursor: pointer;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  box-shadow: 0 1px 3px rgba(0, 0, 0, 0.3);
+  flex-shrink: 0;
+}
+
+.shared-token-duplicate {
+  background: #28a745;
+}
+
+.shared-token-duplicate:hover {
+  background: #218838;
+}
+
+.shared-token-item-remove {
+  background: #dc3545;
+}
+
+.shared-token-item-remove:hover {
+  background: #c82333;
+}
+
+.shared-token-item {
+  position: relative;
+}
+</style>

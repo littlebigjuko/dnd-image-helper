@@ -67,9 +67,52 @@ export function useTokenUpload() {
   function removeToken(i) {
     tokenImages.value.splice(i, 1);
   }
+
+  function duplicateToken(id) {
+    if (tokenImages.value.length >= 50) {
+      console.warn('Cannot duplicate: Maximum 50 tokens allowed');
+      return false;
+    }
+
+    const tokenToDuplicate = tokenImages.value.find((token) => token.id === id);
+    if (!tokenToDuplicate) {
+      console.warn('Token not found for duplication');
+      return false;
+    }
+
+    const generateDuplicateName = (originalName) => {
+      const existingNames = tokenImages.value.map((token) => token.name);
+      let counter = 2;
+      let newName = `${originalName} (copy)`;
+
+      while (existingNames.includes(newName)) {
+        newName = `${originalName} (${counter})`;
+        counter++;
+      }
+
+      return newName;
+    };
+
+    const duplicatedToken = {
+      id: Date.now() + Math.random(),
+      image: tokenToDuplicate.image,
+      name: generateDuplicateName(tokenToDuplicate.name)
+    };
+
+    tokenImages.value.push(duplicatedToken);
+    return true;
+  }
+
   function clearTokens() {
     tokenImages.value = [];
   }
 
-  return { tokenImages, isUploading, processFiles, removeToken, clearTokens };
+  return {
+    tokenImages,
+    isUploading,
+    processFiles,
+    removeToken,
+    duplicateToken,
+    clearTokens
+  };
 }

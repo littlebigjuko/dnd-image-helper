@@ -401,27 +401,6 @@ a,
   text-overflow: ellipsis;
 }
 
-.shared-token-item-remove {
-  position: absolute;
-  top: 4px;
-  right: 4px;
-  width: 20px;
-  height: 20px;
-  background: #ef4444;
-  color: white;
-  border: none;
-  border-radius: 50%;
-  font-size: 12px;
-  cursor: pointer;
-  display: flex;
-  align-items: center;
-  justify-content: center;
-}
-
-.shared-token-item-remove:hover {
-  background: #dc2626;
-}
-
 .shared-token-list-empty {
   grid-column: 1 / -1;
   text-align: center;
