@@ -1,65 +1,79 @@
-import { computed, ref } from "vue";
+import { computed, ref } from 'vue';
 
 export function useTokenLayout() {
-  const tokenSize = ref("medium");
-  const pageSize = ref("letter");
+  const tokenSize = ref('medium');
 
   const tokenSizes = {
-    small: { height: 30, name: "Small (3cm)" },
-    medium: { height: 45, name: "Medium (4.5cm)" },
-    big: { height: 60, name: "Big (6cm)" },
+    small: { height: 120, name: 'Small (12cm)' },
+    medium: { height: 180, name: 'Medium (18cm)' },
+    high: { height: 240, name: 'High (24cm)' }
   };
 
-  const pageSizes = {
-    letter: { width: 216, height: 279, name: "Letter" },
-    a4: { width: 210, height: 297, name: "A4" },
-  };
+  const PAGE_WIDTH_MM = 210;
+  const PAGE_HEIGHT_MM = 297;
+  const PAGE_MARGIN_MM = 40;
+  const STANDING_WHITE_SPACE_MM = 40;
+  const FOLD_GAP_MM = 4;
+  const GRID_GAP_MM = 4;
+
+  const pageSize = { width: PAGE_WIDTH_MM, height: PAGE_HEIGHT_MM };
 
   const tokenDimensions = computed(() => {
     const tokenHeight = tokenSizes[tokenSize.value].height;
-    const aspectRatio = 1;
-    const tokenWidth = tokenHeight * aspectRatio;
+    const tokenWidth = tokenHeight;
     return { width: tokenWidth, height: tokenHeight };
   });
 
-  const sheetLayout = computed(() => {
-    const selectedPageSize = pageSizes[pageSize.value];
+  const tokenUnitDimensions = computed(() => {
     const tokenDims = tokenDimensions.value;
-    const margin = 10;
+    const unitWidth = tokenDims.width;
+    const unitHeight =
+      STANDING_WHITE_SPACE_MM +
+      tokenDims.height +
+      FOLD_GAP_MM +
+      tokenDims.height +
+      STANDING_WHITE_SPACE_MM;
+    return { width: unitWidth, height: unitHeight };
+  });
 
-    const availableWidth = selectedPageSize.width - margin * 2;
-    const availableHeight = (selectedPageSize.height - margin * 2) / 2;
+  const sheetLayout = computed(() => {
+    const tokenDims = tokenDimensions.value;
+    const unitDims = tokenUnitDimensions.value;
 
-    const tokensPerRow = Math.floor(availableWidth / tokenDims.width);
-    const maxRows = Math.floor(availableHeight / tokenDims.height);
+    const availableWidth = PAGE_WIDTH_MM - PAGE_MARGIN_MM * 2;
+    const availableHeight = PAGE_HEIGHT_MM - PAGE_MARGIN_MM * 2;
+
+    const tokensPerRow = Math.floor(
+      (availableWidth + GRID_GAP_MM) / (unitDims.width + GRID_GAP_MM)
+    );
+    const maxRows = Math.floor(
+      (availableHeight + GRID_GAP_MM) / (unitDims.height + GRID_GAP_MM)
+    );
 
     if (tokensPerRow === 0 || maxRows === 0) {
-      throw new Error("Token size too large for selected page size");
+      throw new Error('Token size too large for A4 page size');
     }
 
     const tokensPerPage = tokensPerRow * maxRows;
-    const cellWidth = availableWidth / tokensPerRow;
-    const cellHeight = availableHeight / maxRows;
 
     return {
-      pageSize: selectedPageSize,
+      pageSize,
       tokenDims,
+      unitDims,
       tokensPerRow,
+      maxRows,
       tokensPerPage,
-      cellWidth,
-      cellHeight,
-      margin,
+      pageMargin: PAGE_MARGIN_MM,
+      standingWhiteSpace: STANDING_WHITE_SPACE_MM,
+      foldGap: FOLD_GAP_MM,
+      gridGap: GRID_GAP_MM,
       availableWidth,
-      availableHeight,
+      availableHeight
     };
   });
 
   function updateTokenSize(newSize) {
     tokenSize.value = newSize;
-  }
-
-  function updatePageSize(newSize) {
-    pageSize.value = newSize;
   }
 
   function calculateTotalPages(tokenCount) {
@@ -72,13 +86,10 @@ export function useTokenLayout() {
 
   return {
     tokenSize,
-    pageSize,
     tokenSizes,
-    pageSizes,
     tokenDimensions,
     sheetLayout,
     updateTokenSize,
-    updatePageSize,
-    calculateTotalPages,
+    calculateTotalPages
   };
 }
