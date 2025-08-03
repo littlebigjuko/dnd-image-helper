@@ -38,3 +38,475 @@ a,
     padding: 0rem;
   }
 }
+
+/* ========================================
+   SHARED LAYOUT COMPONENTS
+   ======================================== */
+
+.shared-main-content {
+  padding: 10px;
+  width: 100%;
+}
+
+.shared-desktop-layout {
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+}
+
+@media (min-width: 1025px) {
+  .shared-main-content {
+    max-width: none;
+    padding: 10px;
+    height: calc(100vh - 160px);
+    overflow: hidden;
+  }
+
+  .shared-desktop-layout {
+    display: grid;
+    grid-template-columns: 400px 1fr;
+    gap: 10px;
+    height: 100%;
+  }
+
+  .shared-controls-column {
+    display: flex;
+    flex-direction: column;
+    gap: 10px;
+    overflow-y: auto;
+  }
+
+  .shared-preview-column {
+    display: flex;
+    flex-direction: column;
+    min-height: 0;
+  }
+
+  .shared-preview-section {
+    flex: 1;
+    display: flex;
+    flex-direction: column;
+    min-height: 0;
+  }
+
+  .shared-controls-section {
+    display: flex;
+    flex-direction: column;
+    gap: 10px;
+    margin-bottom: 0;
+  }
+}
+
+@media (max-width: 1024px) {
+  .shared-main-content {
+    max-width: 1200px;
+    margin: 0 auto;
+  }
+}
+
+/* ========================================
+   SHARED FORM CONTROLS
+   ======================================== */
+
+.shared-upload-area {
+  border: 2px dashed #e2e8f0;
+  border-radius: 12px;
+  padding: 48px 10px;
+  text-align: center;
+  background: #f8fafc;
+  transition: all 0.3s ease;
+  cursor: pointer;
+}
+
+.shared-upload-area:hover,
+.shared-upload-area.dragover {
+  border-color: #667eea;
+  background: #f0f4ff;
+}
+
+.shared-upload-icon {
+  font-size: 3rem;
+  color: #94a3b8;
+  margin-bottom: 16px;
+}
+
+.shared-upload-text {
+  font-size: 1.1rem;
+  color: #475569;
+  margin-bottom: 8px;
+}
+
+.shared-upload-hint {
+  font-size: 0.9rem;
+  color: #94a3b8;
+}
+
+.shared-file-input {
+  display: none;
+}
+
+.shared-controls-section {
+  display: grid;
+  gap: 10px;
+  margin-bottom: 10px;
+}
+
+.shared-control-group {
+  background: #f8fafc;
+  padding: 10px;
+  border-radius: 12px;
+  border: 1px solid #e2e8f0;
+}
+
+.shared-control-label {
+  font-size: 1rem;
+  font-weight: 600;
+  color: #1e293b;
+  margin-bottom: 16px;
+  display: block;
+}
+
+.shared-grid-controls {
+  display: flex;
+  gap: 16px;
+  align-items: center;
+}
+
+.shared-input-group {
+  flex: 1;
+}
+
+.shared-input-label {
+  font-size: 0.875rem;
+  color: #64748b;
+  margin-bottom: 4px;
+  display: block;
+}
+
+.shared-number-input {
+  width: 100%;
+  padding: 12px;
+  border: 1px solid #d1d5db;
+  border-radius: 8px;
+  font-size: 1rem;
+  text-align: center;
+}
+
+.shared-number-input:focus {
+  outline: none;
+  border-color: #667eea;
+  box-shadow: 0 0 0 3px rgba(102, 126, 234, 0.1);
+}
+
+.shared-size-select {
+  width: 100%;
+  padding: 12px;
+  border: 1px solid #d1d5db;
+  border-radius: 8px;
+  font-size: 1rem;
+  background: white;
+}
+
+.shared-size-select:focus {
+  outline: none;
+  border-color: #667eea;
+  box-shadow: 0 0 0 3px rgba(102, 126, 234, 0.1);
+}
+
+/* ========================================
+   SHARED BUTTONS
+   ======================================== */
+
+.shared-action-buttons {
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+}
+
+.shared-btn {
+  padding: 12px 10px;
+  border: none;
+  border-radius: 8px;
+  font-size: 1rem;
+  font-weight: 600;
+  cursor: pointer;
+  transition: all 0.2s ease;
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+
+.shared-btn:disabled {
+  opacity: 0.5;
+  cursor: not-allowed;
+}
+
+.shared-btn-primary {
+  background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+  color: white;
+}
+
+.shared-btn-primary:hover:not(:disabled) {
+  transform: translateY(-1px);
+  box-shadow: 0 8px 20px rgba(102, 126, 234, 0.3);
+}
+
+.shared-btn-secondary {
+  background: #f1f5f9;
+  color: #475569;
+  border: 1px solid #e2e8f0;
+}
+
+.shared-btn-secondary:hover:not(:disabled) {
+  background: #e2e8f0;
+}
+
+/* ========================================
+   SHARED PREVIEW CONTAINERS
+   ======================================== */
+
+.shared-preview-container {
+  border: 1px solid #e2e8f0;
+  border-radius: 12px;
+  overflow: hidden;
+  background: #f8fafc;
+  min-height: 100%;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 100%;
+  max-width: 100%;
+  box-sizing: border-box;
+}
+
+.preview-canvas {
+  max-width: 100%;
+  max-height: 100%;
+  width: auto;
+  height: auto;
+  display: block;
+  object-fit: contain;
+}
+
+.shared-preview-placeholder {
+  text-align: center;
+  color: #94a3b8;
+  padding: 48px;
+}
+
+.shared-preview-placeholder-icon {
+  font-size: 4rem;
+  margin-bottom: 16px;
+  opacity: 0.5;
+}
+
+/* ========================================
+   SHARED MESSAGE STYLES
+   ======================================== */
+
+.shared-message {
+  padding: 16px;
+  border-radius: 8px;
+  margin-bottom: 16px;
+  font-weight: 500;
+}
+
+.shared-message.error {
+  background: #fef2f2;
+  color: #dc2626;
+  border: 1px solid #fecaca;
+}
+
+.shared-message.success {
+  background: #f0fdf4;
+  color: #16a34a;
+  border: 1px solid #bbf7d0;
+}
+
+.shared-message.info {
+  background: #eff6ff;
+  color: #2563eb;
+  border: 1px solid #bfdbfe;
+}
+
+.shared-loading {
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+}
+
+.shared-spinner {
+  width: 16px;
+  height: 16px;
+  border: 2px solid #ffffff80;
+  border-top-color: #ffffff;
+  border-radius: 50%;
+  animation: shared-spin 1s linear infinite;
+}
+
+@keyframes shared-spin {
+  to {
+    transform: rotate(360deg);
+  }
+}
+
+/* ========================================
+   SHARED TOKEN COMPONENTS
+   ======================================== */
+
+.shared-token-list-section {
+  margin-bottom: 10px;
+}
+
+.shared-token-list {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(120px, 1fr));
+  gap: 16px;
+  padding: 16px;
+  background: #f8fafc;
+  border: 1px solid #e2e8f0;
+  border-radius: 12px;
+  min-height: 120px;
+}
+
+.shared-token-item {
+  position: relative;
+  background: white;
+  border: 1px solid #e2e8f0;
+  border-radius: 8px;
+  padding: 8px;
+  text-align: center;
+  transition: all 0.2s ease;
+}
+
+.shared-token-item:hover {
+  border-color: #667eea;
+  transform: translateY(-2px);
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.1);
+}
+
+.shared-token-item img {
+  width: 100%;
+  height: 80px;
+  object-fit: cover;
+  border-radius: 4px;
+  margin-bottom: 8px;
+}
+
+.shared-token-item-name {
+  font-size: 0.875rem;
+  color: #475569;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+.shared-token-item-remove {
+  position: absolute;
+  top: 4px;
+  right: 4px;
+  width: 20px;
+  height: 20px;
+  background: #ef4444;
+  color: white;
+  border: none;
+  border-radius: 50%;
+  font-size: 12px;
+  cursor: pointer;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.shared-token-item-remove:hover {
+  background: #dc2626;
+}
+
+.shared-token-list-empty {
+  grid-column: 1 / -1;
+  text-align: center;
+  color: #94a3b8;
+  padding: 10px;
+  font-style: italic;
+}
+
+.shared-token-controls {
+  display: grid;
+  gap: 16px;
+}
+
+/* ========================================
+   SHARED RESPONSIVE BREAKPOINTS
+   ======================================== */
+
+@media (max-width: 1024px) {
+  .shared-main-content {
+    height: auto;
+  }
+
+  .shared-desktop-layout {
+    display: block;
+  }
+
+  .shared-controls-column {
+    display: block;
+  }
+
+  .shared-preview-column {
+    display: block;
+  }
+
+  .shared-token-list {
+    grid-template-columns: repeat(auto-fill, minmax(140px, 1fr));
+    max-width: 1400px;
+    margin: 0 auto 16px;
+  }
+
+  .shared-controls-section {
+    max-width: 1000px;
+    margin: 0 auto 10px;
+    display: grid;
+    gap: 10px;
+    align-items: start;
+  }
+
+  .shared-preview-container {
+    max-width: 1400px;
+    margin: 0 auto;
+  }
+
+  .shared-preview-canvas {
+    max-width: 1200px;
+    max-height: 80vh;
+  }
+}
+
+@media (max-width: 768px) {
+  .shared-controls-section {
+    grid-template-columns: 1fr;
+    gap: 16px;
+  }
+
+  .shared-grid-controls {
+    flex-direction: column;
+    gap: 12px;
+  }
+
+  .shared-action-buttons {
+    flex-direction: column;
+  }
+
+  .shared-main-content {
+    padding: 20px;
+  }
+
+  .shared-token-list {
+    grid-template-columns: repeat(auto-fill, minmax(100px, 1fr));
+    gap: 12px;
+  }
+
+  .shared-token-controls {
+    flex-direction: column;
+    gap: 12px;
+  }
+}

@@ -1,10 +1,10 @@
 <template>
-  <div class="main-content">
-    <div class="desktop-layout">
-      <div class="controls-column">
-        <div class="upload-section">
+  <div class="shared-main-content">
+    <div class="shared-desktop-layout">
+      <div class="shared-controls-column">
+        <div class="shared-upload-section">
           <div
-            class="upload-area"
+            class="shared-upload-area"
             ref="tokenUploadAreaRef"
             @click="tokenFileInputRef?.click()"
             @dragover.prevent="handleDragOver"
@@ -12,57 +12,63 @@
             @drop.prevent="handleTokenDrop"
             :class="{ dragover: isDragOver }"
           >
-            <div class="upload-icon">🎯</div>
-            <div class="upload-text">
+            <div class="shared-upload-icon">🎯</div>
+            <div class="shared-upload-text">
               Drop your token images here or click to browse
             </div>
-            <div class="upload-hint">
+            <div class="shared-upload-hint">
               Supports JPEG, PNG, WebP (max 5MB each, up to 50 tokens)
             </div>
           </div>
           <input
             type="file"
             ref="tokenFileInputRef"
-            class="file-input"
+            class="shared-file-input"
             accept="image/*"
             multiple
             @change="handleTokenUpload($event.target.files)"
           />
         </div>
 
-        <div class="token-list-section">
-          <label class="control-label"
+        <div class="shared-token-list-section">
+          <label class="shared-control-label"
             >Selected Tokens (<span>{{ tokenImages.length }}</span
             >)</label
           >
-          <div class="token-list" ref="tokenListRef">
-            <div v-if="tokenImages.length === 0" class="token-list-empty">
+          <div class="shared-token-list" ref="tokenListRef">
+            <div
+              v-if="tokenImages.length === 0"
+              class="shared-token-list-empty"
+            >
               No tokens uploaded yet
             </div>
             <div
               v-else
-              class="token-item"
+              class="shared-token-item"
               v-for="(token, index) in tokenImages"
               :key="index"
             >
-              <button class="token-item-remove" @click="removeTokenItem(index)">
+              <button
+                class="shared-token-item-remove"
+                @click="removeTokenItem(index)"
+              >
                 ×
               </button>
               <img :src="token.image.src" :alt="token.name" />
-              <div class="token-item-name">{{ token.name }}</div>
+              <div class="shared-token-item-name">{{ token.name }}</div>
             </div>
           </div>
         </div>
 
-        <div class="controls-section">
-          <div class="control-group">
-            <label class="control-label">Token Settings</label>
-            <div class="token-controls">
-              <div class="input-group">
-                <label class="input-label">Token Size</label>
+        <div class="shared-controls-section">
+          <div class="shared-control-group">
+            <label class="shared-control-label">Token Settings</label>
+            <div class="shared-token-controls">
+              <div class="shared-input-group">
+                <label class="shared-input-label">Token Size</label>
                 <select
                   ref="tokenSizeSelectRef"
-                  class="size-select"
+                  class="shared-size-select"
                   v-model="tokenSize"
                 >
                   <option value="small">Small (3cm height)</option>
@@ -73,12 +79,12 @@
             </div>
           </div>
 
-          <div class="control-group">
-            <label class="control-label">Actions</label>
-            <div class="action-buttons">
+          <div class="shared-control-group">
+            <label class="shared-control-label">Actions</label>
+            <div class="shared-action-buttons">
               <button
                 ref="generateTokensBtnRef"
-                class="btn btn-primary"
+                class="shared-btn shared-btn-primary"
                 :disabled="tokenImages.length === 0"
                 @click="generateTokenPDF"
               >
@@ -86,7 +92,7 @@
               </button>
               <button
                 ref="resetTokensBtnRef"
-                class="btn btn-secondary"
+                class="shared-btn shared-btn-secondary"
                 @click="resetTokenCreator"
               >
                 🔄 Reset
@@ -96,22 +102,30 @@
         </div>
       </div>
 
-      <div class="preview-column">
-        <div class="preview-section">
-          <div class="preview-container" ref="tokenPreviewContainerRef">
-            <div class="preview-placeholder">
-              <div class="preview-placeholder-icon">🎯</div>
+      <div class="shared-preview-column">
+        <div class="shared-preview-section">
+          <div class="shared-preview-container" ref="tokenPreviewContainerRef">
+            <div class="shared-preview-placeholder">
+              <div class="shared-preview-placeholder-icon">🎯</div>
               <div>Upload token images to see the sheet preview</div>
             </div>
           </div>
         </div>
       </div>
     </div>
+
+    <MessageDisplay
+      :message="currentMessage.text"
+      :type="currentMessage.type"
+      :show="currentMessage.show"
+      @dismiss="dismissMessage"
+    />
   </div>
 </template>
 
 <script setup>
 import { ref, watch } from 'vue';
+import MessageDisplay from '../components/MessageDisplay.vue';
 import { useTokenLayout } from '../composables/useTokenLayout';
 import { useTokenPdfGeneration } from '../composables/useTokenPdfGeneration';
 import { useTokenPreview } from '../composables/useTokenPreview';
@@ -126,6 +140,12 @@ const resetTokensBtnRef = ref(null);
 const tokenPreviewContainerRef = ref(null);
 
 const isDragOver = ref(false);
+
+const currentMessage = ref({
+  text: '',
+  type: 'info',
+  show: false
+});
 
 const {
   tokenImages,
@@ -149,6 +169,18 @@ const { generatePreview: generateTokenPreview, renderTokenSheet } =
 const { isGenerating: isTokenPdfGenerating, generateTokenSheets } =
   useTokenPdfGeneration();
 
+function showMessage(text, type) {
+  currentMessage.value = {
+    text,
+    type,
+    show: true
+  };
+}
+
+function dismissMessage() {
+  currentMessage.value.show = false;
+}
+
 function handleDragOver() {
   isDragOver.value = true;
 }
@@ -158,7 +190,7 @@ function handleDragLeave() {
 }
 
 async function handleTokenUpload(files) {
-  const success = await processTokenFiles(files);
+  const success = await processTokenFiles(files, showMessage);
   if (success) {
     updateTokenPreview();
   }
@@ -173,7 +205,7 @@ async function handleTokenDrop(event) {
 }
 
 function removeTokenItem(index) {
-  removeToken(index, (msg, type) => showMessage(msg, type));
+  removeToken(index, showMessage);
   updateTokenPreview();
 }
 
@@ -198,20 +230,20 @@ async function generateTokenPDF() {
     sheetLayout.value,
     tokenImages.value,
     renderTokenSheet,
-    (msg, type) => showMessage(msg, type)
+    showMessage
   );
 }
 
 function resetTokenCreator() {
   clearTokens();
-  clearMessages();
+  dismissMessage();
   tokenSize.value = 'medium';
   if (tokenFileInputRef.value) tokenFileInputRef.value.value = '';
 
   if (tokenPreviewContainerRef.value) {
     tokenPreviewContainerRef.value.innerHTML = `
-      <div class="preview-placeholder">
-        <div class="preview-placeholder-icon">🎯</div>
+      <div class="shared-preview-placeholder">
+        <div class="shared-preview-placeholder-icon">🎯</div>
         <div>Upload token images to see the sheet preview</div>
       </div>
     `;
@@ -249,7 +281,7 @@ watch([tokenImages, tokenSize], () => {
   .controls-column {
     display: flex;
     flex-direction: column;
-    gap: 24px;
+    gap: 10px;
     overflow-y: auto;
   }
 
@@ -339,7 +371,7 @@ watch([tokenImages, tokenSize], () => {
 .upload-area {
   border: 2px dashed #e2e8f0;
   border-radius: 12px;
-  padding: 48px 24px;
+  padding: 48px 10px;
   text-align: center;
   background: #f8fafc;
   transition: all 0.3s ease;
@@ -381,7 +413,7 @@ watch([tokenImages, tokenSize], () => {
 
 .control-group {
   background: #f8fafc;
-  padding: 24px;
+  padding: 10px;
   border-radius: 12px;
   border: 1px solid #e2e8f0;
 }
@@ -411,7 +443,7 @@ watch([tokenImages, tokenSize], () => {
 }
 
 .btn {
-  padding: 12px 24px;
+  padding: 12px 10px;
   border: none;
   border-radius: 8px;
   font-size: 1rem;

@@ -76,7 +76,7 @@
 .tab-buttons {
   display: flex;
   margin: 0 auto;
-  padding: 0 24px;
+  padding: 0 10px;
 }
 
 @media (max-width: 1024px) {
@@ -86,7 +86,7 @@
 }
 
 .tab-button {
-  padding: 16px 24px;
+  padding: 16px 10px;
   border: none;
   background: transparent;
   color: #64748b;
