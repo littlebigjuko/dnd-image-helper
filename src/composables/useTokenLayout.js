@@ -2,7 +2,7 @@ import { computed, ref } from 'vue';
 
 export function useTokenLayout() {
   const tokenSize = ref('medium');
-  const perforationEdges = ref(true);
+  const perforationEdges = ref(false);
 
   const tokenSizes = {
     small: { height: 45, name: 'Small (4.5cm)' },

@@ -1,6 +1,6 @@
 import { ref } from 'vue';
 
-const GRID_LINE_WIDTH = 1;
+const GRID_LINE_WIDTH = 0.35;
 const CUT_LINE_COLOR = '#333333';
 const FOLD_LINE_COLOR = '#666666';
 const CUT_LINE_DASH = [6, 3];
@@ -88,27 +88,41 @@ export function useTokenPreview() {
     ctx.setLineDash(CUT_LINE_DASH);
     ctx.strokeRect(x0, y0, gridW, gridH);
 
-    // Inner vertical separators
+    // Use dotted style for internal guides and extend them across the whole page
+    ctx.strokeStyle = FOLD_LINE_COLOR;
+    ctx.setLineDash(FOLD_LINE_DASH);
+    const prevCapSep = ctx.lineCap;
+    ctx.lineCap = 'round';
+
+    // Vertical guides at internal column boundaries (top → bottom of page)
+    // Left outer vertical guide (full page height)
+    ctx.beginPath();
+    ctx.moveTo(x0, 0);
+    ctx.lineTo(x0, L.pageSize.height);
+    ctx.stroke();
     for (let c = 1; c < tokensPerRow; c++) {
       const x = x0 + c * unitDims.width + (c - 1) * gridGap;
       ctx.beginPath();
-      ctx.moveTo(x, y0);
-      ctx.lineTo(x, y0 + gridH);
+      ctx.moveTo(x, 0);
+      ctx.lineTo(x, L.pageSize.height);
       ctx.stroke();
     }
+    // Right outer vertical guide (full page height)
+    ctx.beginPath();
+    ctx.moveTo(x0 + gridW, 0);
+    ctx.lineTo(x0 + gridW, L.pageSize.height);
+    ctx.stroke();
 
-    // Inner horizontal separators
+    // Horizontal guides at internal row boundaries (left → right edge of page)
     for (let r = 1; r < maxRows; r++) {
       const y = y0 + r * unitDims.height + (r - 1) * gridGap;
       ctx.beginPath();
-      ctx.moveTo(x0, y);
-      ctx.lineTo(x0 + gridW, y);
+      ctx.moveTo(0, y);
+      ctx.lineTo(L.pageSize.width, y);
       ctx.stroke();
     }
 
-    // Fold line across center of each unit
-    ctx.strokeStyle = FOLD_LINE_COLOR;
-    ctx.setLineDash(FOLD_LINE_DASH);
+    // Fold line across the center of each unit (full page width)
     for (let r = 0; r < maxRows; r++) {
       const yFold =
         y0 +
@@ -116,11 +130,12 @@ export function useTokenPreview() {
         standingWhiteSpace +
         tokenDims.height;
       ctx.beginPath();
-      ctx.moveTo(x0, yFold);
-      ctx.lineTo(x0 + gridW, yFold);
+      ctx.moveTo(0, yFold);
+      ctx.lineTo(L.pageSize.width, yFold);
       ctx.stroke();
     }
 
+    ctx.lineCap = prevCapSep;
     ctx.setLineDash([]);
   }
 
