@@ -4,131 +4,72 @@ export function useTokenUpload() {
   const tokenImages = ref([]);
   const isUploading = ref(false);
 
-  function validateFile(file) {
-    const validTypes = [
+  function validate(file) {
+    const okType = [
       'image/jpeg',
       'image/png',
       'image/webp',
       'image/bmp',
       'image/tiff'
-    ];
-    const maxSize = 100 * 1024 * 1024;
-
-    if (!validTypes.includes(file.type)) {
-      return {
-        isValid: false,
-        message: `${file.name}: Please use JPEG, PNG, or WebP format`
-      };
-    }
-
-    if (file.size > maxSize) {
-      return {
-        isValid: false,
-        message: `${file.name}: File too large (max 100MB)`
-      };
-    }
-
-    return { isValid: true };
+    ].includes(file.type);
+    if (!okType) return `${file.name}: Please use JPEG, PNG, or WebP`;
+    if (file.size > 5 * 1024 * 1024)
+      return `${file.name}: File too large (max 5MB)`;
+    return null;
   }
 
-  function loadTokenImage(file) {
-    return new Promise((resolve, reject) => {
-      const reader = new FileReader();
-      reader.onload = (e) => {
+  function load(file) {
+    return new Promise((res, rej) => {
+      const r = new FileReader();
+      r.onload = (e) => {
         const img = new Image();
-        img.onload = () => {
-          const canvas = document.createElement('canvas');
-          const ctx = canvas.getContext('2d');
-
-          const qualityMultiplier = 4;
-          canvas.width = img.naturalWidth * qualityMultiplier;
-          canvas.height = img.naturalHeight * qualityMultiplier;
-
-          ctx.scale(qualityMultiplier, qualityMultiplier);
-          ctx.imageSmoothingEnabled = true;
-          ctx.imageSmoothingQuality = 'high';
-          ctx.textRenderingOptimization = 'optimizeQuality';
-
-          ctx.drawImage(img, 0, 0);
-
-          const enhancedImg = new Image();
-          enhancedImg.onload = () => {
-            resolve({
-              image: enhancedImg,
-              name: file.name.replace(/\.[^/.]+$/, ''),
-              id: Date.now() + Math.random(),
-              originalWidth: img.naturalWidth,
-              originalHeight: img.naturalHeight,
-              enhancedWidth: canvas.width,
-              enhancedHeight: canvas.height
-            });
-          };
-          enhancedImg.src = canvas.toDataURL('image/png', 1.0);
-        };
-        img.onerror = reject;
+        img.onload = () =>
+          res({
+            image: img,
+            name: file.name.replace(/\.[^/.]+$/, ''),
+            id: Date.now() + Math.random()
+          });
+        img.onerror = rej;
         img.src = e.target.result;
       };
-      reader.onerror = reject;
-      reader.readAsDataURL(file);
+      r.onerror = rej;
+      r.readAsDataURL(file);
     });
   }
 
-  async function processFiles(files, showMessage) {
-    const validFiles = [];
+  async function processFiles(files) {
+    const list = Array.from(files || []);
+    if (!list.length) return false;
 
-    for (const file of files) {
-      const validation = validateFile(file);
-      if (validation.isValid) {
-        validFiles.push(file);
-      } else {
-        showMessage(validation.message, 'error');
+    const accepted = [];
+    for (const f of list) {
+      const err = validate(f);
+      if (err) {
+        console.warn(err);
+        continue;
       }
+      accepted.push(f);
     }
-
-    if (validFiles.length === 0) {
-      return false;
-    }
-
-    if (tokenImages.value.length + validFiles.length > 50) {
-      showMessage(
-        'Maximum 50 tokens allowed. Some files were skipped.',
-        'error'
-      );
-      validFiles.splice(50 - tokenImages.value.length);
-    }
+    if (!accepted.length) return false;
+    if (tokenImages.value.length + accepted.length > 50)
+      accepted.splice(50 - tokenImages.value.length);
 
     isUploading.value = true;
-
     try {
-      const images = await Promise.all(
-        validFiles.map((file) => loadTokenImage(file))
-      );
-      tokenImages.value.push(...images);
-      showMessage(`${images.length} token(s) added successfully`, 'success');
+      const imgs = await Promise.all(accepted.map(load));
+      tokenImages.value.push(...imgs);
       return true;
-    } catch (error) {
-      showMessage('Failed to load some images', 'error');
-      console.error('Image loading error:', error);
-      return false;
     } finally {
       isUploading.value = false;
     }
   }
 
-  function removeToken(index, showMessage) {
-    tokenImages.value.splice(index, 1);
-    showMessage('Token removed', 'info');
+  function removeToken(i) {
+    tokenImages.value.splice(i, 1);
   }
-
   function clearTokens() {
     tokenImages.value = [];
   }
 
-  return {
-    tokenImages,
-    isUploading,
-    processFiles,
-    removeToken,
-    clearTokens
-  };
+  return { tokenImages, isUploading, processFiles, removeToken, clearTokens };
 }

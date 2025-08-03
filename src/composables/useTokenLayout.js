@@ -2,94 +2,63 @@ import { computed, ref } from 'vue';
 
 export function useTokenLayout() {
   const tokenSize = ref('medium');
+  const perforationEdges = ref(true);
 
   const tokenSizes = {
-    small: { height: 120, name: 'Small (12cm)' },
-    medium: { height: 180, name: 'Medium (18cm)' },
-    high: { height: 240, name: 'High (24cm)' }
+    small: { height: 45, name: 'Small (4.5cm)' },
+    medium: { height: 60, name: 'Medium (6cm)' },
+    high: { height: 90, name: 'High (9cm)' }
   };
 
-  const PAGE_WIDTH_MM = 210;
-  const PAGE_HEIGHT_MM = 297;
-  const PAGE_MARGIN_MM = 40;
-  const STANDING_WHITE_SPACE_MM = 40;
-  const FOLD_GAP_MM = 4;
-  const GRID_GAP_MM = 4;
+  // Panel aspect ratio: width : height (portrait)
+  const ASPECT = 2 / 3; // 2:3 works for your portraits
 
-  const pageSize = { width: PAGE_WIDTH_MM, height: PAGE_HEIGHT_MM };
+  // A4 landscape
+  const PAGE = { width: 297, height: 210 };
+  const MARGIN = 10; // mm
+  const GRID_GAP = 0; // mm
+  const FOLD_GAP = 0; // mm
+  const WHITE = 0; // mm
 
   const tokenDimensions = computed(() => {
-    const tokenHeight = tokenSizes[tokenSize.value].height;
-    const tokenWidth = tokenHeight;
-    return { width: tokenWidth, height: tokenHeight };
+    const h = tokenSizes[tokenSize.value].height;
+    const w = Math.round(h * ASPECT); // portrait width (2:3)
+    return { width: w, height: h };
   });
 
   const tokenUnitDimensions = computed(() => {
-    const tokenDims = tokenDimensions.value;
-    const unitWidth = tokenDims.width;
-    const unitHeight =
-      STANDING_WHITE_SPACE_MM +
-      tokenDims.height +
-      FOLD_GAP_MM +
-      tokenDims.height +
-      STANDING_WHITE_SPACE_MM;
-    return { width: unitWidth, height: unitHeight };
-  });
-
-  const sheetLayout = computed(() => {
-    const tokenDims = tokenDimensions.value;
-    const unitDims = tokenUnitDimensions.value;
-
-    const availableWidth = PAGE_WIDTH_MM - PAGE_MARGIN_MM * 2;
-    const availableHeight = PAGE_HEIGHT_MM - PAGE_MARGIN_MM * 2;
-
-    const tokensPerRow = Math.floor(
-      (availableWidth + GRID_GAP_MM) / (unitDims.width + GRID_GAP_MM)
-    );
-    const maxRows = Math.floor(
-      (availableHeight + GRID_GAP_MM) / (unitDims.height + GRID_GAP_MM)
-    );
-
-    if (tokensPerRow === 0 || maxRows === 0) {
-      throw new Error('Token size too large for A4 page size');
-    }
-
-    const tokensPerPage = tokensPerRow * maxRows;
-
+    const t = tokenDimensions.value;
     return {
-      pageSize,
-      tokenDims,
-      unitDims,
-      tokensPerRow,
-      maxRows,
-      tokensPerPage,
-      pageMargin: PAGE_MARGIN_MM,
-      standingWhiteSpace: STANDING_WHITE_SPACE_MM,
-      foldGap: FOLD_GAP_MM,
-      gridGap: GRID_GAP_MM,
-      availableWidth,
-      availableHeight
+      width: t.width,
+      height: WHITE + t.height + FOLD_GAP + t.height + WHITE
     };
   });
 
-  function updateTokenSize(newSize) {
-    tokenSize.value = newSize;
-  }
+  const sheetLayout = computed(() => {
+    const t = tokenDimensions.value;
+    const u = tokenUnitDimensions.value;
 
-  function calculateTotalPages(tokenCount) {
-    try {
-      return Math.ceil(tokenCount / sheetLayout.value.tokensPerPage);
-    } catch (error) {
-      return 0;
-    }
-  }
+    const availW = PAGE.width - MARGIN * 2;
+    const availH = PAGE.height - MARGIN * 2;
 
-  return {
-    tokenSize,
-    tokenSizes,
-    tokenDimensions,
-    sheetLayout,
-    updateTokenSize,
-    calculateTotalPages
-  };
+    const perRow = Math.floor((availW + GRID_GAP) / (u.width + GRID_GAP));
+    const rows = Math.floor((availH + GRID_GAP) / (u.height + GRID_GAP));
+    if (perRow < 1 || rows < 1) throw new Error('Token size too large for A4');
+
+    return {
+      pageSize: PAGE,
+      tokenDims: t,
+      unitDims: u,
+      tokensPerRow: perRow,
+      maxRows: rows,
+      tokensPerPage: perRow * rows,
+      pageMargin: MARGIN,
+      standingWhiteSpace: WHITE,
+      foldGap: FOLD_GAP,
+      gridGap: GRID_GAP,
+      perforationEdges: perforationEdges.value
+    };
+  });
+
+  return { tokenSize, perforationEdges, tokenDimensions, sheetLayout };
 }

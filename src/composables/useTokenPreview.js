@@ -1,274 +1,221 @@
 import { ref } from 'vue';
 
-const PREVIEW_SCALE = 8;
 const GRID_LINE_WIDTH = 1;
 const CUT_LINE_COLOR = '#333333';
 const FOLD_LINE_COLOR = '#666666';
-const CUT_LINE_DASH = [];
+const CUT_LINE_DASH = [6, 3];
 const FOLD_LINE_DASH = [3, 2];
-const REGISTRATION_MARK_SIZE = 3;
-const REGISTRATION_MARK_OFFSET = 5;
+
+// Perforation dots (in mm)
+const DOT_RADIUS = 0.6;
+const DOT_SPACING = 5;
+const PANEL_OVERLAP_MM = 1.2; // stronger overlap at fold to remove any visible seam
 
 export function useTokenPreview() {
   const canvas = ref(null);
-  const isGeneratingPreview = ref(false);
 
   function createCanvas(layout, containerWidth = 600) {
-    const canvasElement = document.createElement('canvas');
-    canvasElement.className = 'preview-canvas';
-    const ctx = canvasElement.getContext('2d');
+    const el = document.createElement('canvas');
+    el.className = 'preview-canvas';
+    const ctx = el.getContext('2d');
 
-    const devicePixelRatio = window.devicePixelRatio || 1;
-    const qualityMultiplier = 4;
-    const aspectRatio = layout.pageSize.height / layout.pageSize.width;
-    const maxWidth = Math.min(containerWidth - 32, 600);
-    const displayWidth = maxWidth;
-    const displayHeight = displayWidth * aspectRatio;
+    const dpr = window.devicePixelRatio || 1;
+    const quality = 4;
 
-    canvasElement.width = displayWidth * devicePixelRatio * qualityMultiplier;
-    canvasElement.height = displayHeight * devicePixelRatio * qualityMultiplier;
+    // Layout is in mm. We scale so that 1 layout mm maps consistently on screen.
+    const aspect = layout.pageSize.height / layout.pageSize.width;
+    const displayW = Math.min((containerWidth || 600) - 32, 600);
+    const displayH = displayW * aspect;
 
-    canvasElement.style.width = `${displayWidth}px`;
-    canvasElement.style.height = `${displayHeight}px`;
-    canvasElement.style.maxWidth = '100%';
+    el.width = Math.max(1, Math.floor(displayW * dpr * quality));
+    el.height = Math.max(1, Math.floor(displayH * dpr * quality));
+    el.style.width = `${displayW}px`;
+    el.style.height = `${displayH}px`;
 
     ctx.imageSmoothingEnabled = true;
     ctx.imageSmoothingQuality = 'high';
-    ctx.textRenderingOptimization = 'optimizeQuality';
 
-    const scale =
-      (displayWidth / layout.pageSize.width) *
-      devicePixelRatio *
-      qualityMultiplier;
+    const scale = (displayW / layout.pageSize.width) * dpr * quality;
     ctx.scale(scale, scale);
-    ctx.fillStyle = 'white';
+
+    // White page background
+    ctx.fillStyle = '#fff';
     ctx.fillRect(0, 0, layout.pageSize.width, layout.pageSize.height);
 
-    return { canvasElement, ctx };
+    return { el, ctx };
   }
 
-  function drawTokenImage(ctx, image, x, y, width, height, isFlipped) {
+  // Draw image with CSS-like "cover" behavior, optionally rotated 180°
+  function drawImageCover(ctx, img, x, y, w, h, rotate180 = false) {
+    const s = Math.max(w / img.width, h / img.height);
+    const sw = w / s;
+    const sh = h / s;
+    const sx = (img.width - sw) / 2;
+    const sy = (img.height - sh) / 2;
+
     ctx.save();
-
-    const padding = 2;
-    const drawWidth = width - padding * 2;
-    const drawHeight = height - padding * 2;
-
-    const scale = Math.min(drawWidth / image.width, drawHeight / image.height);
-    const scaledWidth = image.width * scale;
-    const scaledHeight = image.height * scale;
-
-    const drawX = x + padding + (drawWidth - scaledWidth) / 2;
-    const drawY = y + padding + (drawHeight - scaledHeight) / 2;
-
-    if (isFlipped) {
-      ctx.translate(drawX + scaledWidth / 2, drawY + scaledHeight / 2);
+    if (rotate180) {
+      ctx.translate(x + w / 2, y + h / 2);
       ctx.rotate(Math.PI);
-      ctx.drawImage(
-        image,
-        -scaledWidth / 2,
-        -scaledHeight / 2,
-        scaledWidth,
-        scaledHeight
-      );
+      ctx.drawImage(img, sx, sy, sw, sh, -w / 2, -h / 2, w, h);
     } else {
-      ctx.drawImage(image, drawX, drawY, scaledWidth, scaledHeight);
+      ctx.drawImage(img, sx, sy, sw, sh, x, y, w, h);
     }
-
     ctx.restore();
   }
 
-  function drawRegistrationMarks(ctx, pageSize) {
-    ctx.strokeStyle = CUT_LINE_COLOR;
-    ctx.lineWidth = GRID_LINE_WIDTH;
-    ctx.setLineDash(CUT_LINE_DASH);
-
-    const markSize = REGISTRATION_MARK_SIZE;
-    const offset = REGISTRATION_MARK_OFFSET;
-
-    const corners = [
-      { x: offset, y: offset },
-      { x: pageSize.width - offset, y: offset },
-      { x: offset, y: pageSize.height - offset },
-      { x: pageSize.width - offset, y: pageSize.height - offset }
-    ];
-
-    corners.forEach((corner) => {
-      ctx.beginPath();
-      ctx.moveTo(corner.x - markSize, corner.y);
-      ctx.lineTo(corner.x + markSize, corner.y);
-      ctx.stroke();
-
-      ctx.beginPath();
-      ctx.moveTo(corner.x, corner.y - markSize);
-      ctx.lineTo(corner.x, corner.y + markSize);
-      ctx.stroke();
-    });
-  }
-
-  function drawGridLines(ctx, layout) {
+  // Single shared dashed grid + internal separators + fold lines
+  function drawGrid(ctx, L) {
     const {
-      pageSize,
       pageMargin,
       unitDims,
       tokenDims,
       tokensPerRow,
       maxRows,
       gridGap,
-      standingWhiteSpace,
-      foldGap
-    } = layout;
+      standingWhiteSpace
+    } = L;
+
+    const x0 = pageMargin;
+    const y0 = pageMargin;
+    const gridW = tokensPerRow * unitDims.width + (tokensPerRow - 1) * gridGap;
+    const gridH = maxRows * unitDims.height + (maxRows - 1) * gridGap;
 
     ctx.lineWidth = GRID_LINE_WIDTH;
 
+    // Outer cut rectangle
     ctx.strokeStyle = CUT_LINE_COLOR;
     ctx.setLineDash(CUT_LINE_DASH);
+    ctx.strokeRect(x0, y0, gridW, gridH);
 
-    for (let row = 0; row <= maxRows; row++) {
-      for (let col = 0; col <= tokensPerRow; col++) {
-        const unitX = pageMargin + col * (unitDims.width + gridGap);
-        const unitY = pageMargin + row * (unitDims.height + gridGap);
-
-        if (row < maxRows) {
-          ctx.beginPath();
-          ctx.moveTo(unitX, unitY);
-          ctx.lineTo(unitX + unitDims.width, unitY);
-          ctx.stroke();
-
-          ctx.beginPath();
-          ctx.moveTo(unitX, unitY + unitDims.height);
-          ctx.lineTo(unitX + unitDims.width, unitY + unitDims.height);
-          ctx.stroke();
-        }
-
-        if (col < tokensPerRow) {
-          ctx.beginPath();
-          ctx.moveTo(unitX, unitY);
-          ctx.lineTo(unitX, unitY + unitDims.height);
-          ctx.stroke();
-
-          ctx.beginPath();
-          ctx.moveTo(unitX + unitDims.width, unitY);
-          ctx.lineTo(unitX + unitDims.width, unitY + unitDims.height);
-          ctx.stroke();
-        }
-      }
+    // Inner vertical separators
+    for (let c = 1; c < tokensPerRow; c++) {
+      const x = x0 + c * unitDims.width + (c - 1) * gridGap;
+      ctx.beginPath();
+      ctx.moveTo(x, y0);
+      ctx.lineTo(x, y0 + gridH);
+      ctx.stroke();
     }
 
+    // Inner horizontal separators
+    for (let r = 1; r < maxRows; r++) {
+      const y = y0 + r * unitDims.height + (r - 1) * gridGap;
+      ctx.beginPath();
+      ctx.moveTo(x0, y);
+      ctx.lineTo(x0 + gridW, y);
+      ctx.stroke();
+    }
+
+    // Fold line across center of each unit
     ctx.strokeStyle = FOLD_LINE_COLOR;
     ctx.setLineDash(FOLD_LINE_DASH);
-
-    for (let row = 0; row < maxRows; row++) {
-      for (let col = 0; col < tokensPerRow; col++) {
-        const unitX = pageMargin + col * (unitDims.width + gridGap);
-        const unitY = pageMargin + row * (unitDims.height + gridGap);
-
-        const foldLineY = unitY + standingWhiteSpace + tokenDims.height;
-        ctx.beginPath();
-        ctx.moveTo(unitX, foldLineY);
-        ctx.lineTo(unitX + unitDims.width, foldLineY);
-        ctx.stroke();
-      }
+    for (let r = 0; r < maxRows; r++) {
+      const yFold =
+        y0 +
+        r * (unitDims.height + gridGap) +
+        standingWhiteSpace +
+        tokenDims.height;
+      ctx.beginPath();
+      ctx.moveTo(x0, yFold);
+      ctx.lineTo(x0 + gridW, yFold);
+      ctx.stroke();
     }
 
     ctx.setLineDash([]);
-
-    drawRegistrationMarks(ctx, pageSize);
   }
 
-  function renderTokenSheet(ctx, layout, tokens, pageIndex) {
-    const {
-      pageSize,
-      pageMargin,
-      unitDims,
-      tokenDims,
-      tokensPerRow,
-      maxRows,
-      gridGap,
-      standingWhiteSpace,
-      foldGap
-    } = layout;
+  function drawPerforationDots(ctx, L) {
+    const { pageMargin, unitDims, tokensPerRow, maxRows, gridGap } = L;
+    ctx.save();
+    ctx.fillStyle = '#000';
 
-    ctx.fillStyle = 'white';
-    ctx.fillRect(0, 0, pageSize.width, pageSize.height);
+    for (let r = 0; r < maxRows; r++) {
+      for (let c = 0; c < tokensPerRow; c++) {
+        const ux = pageMargin + c * (unitDims.width + gridGap);
+        const uy = pageMargin + r * (unitDims.height + gridGap);
+        const xL = ux + 1; // 1mm inset
+        const xR = ux + unitDims.width - 1;
+        const yStart = uy + 2;
+        const yEnd = uy + unitDims.height - 2;
 
-    drawGridLines(ctx, layout);
+        for (let y = yStart; y <= yEnd; y += DOT_SPACING) {
+          ctx.beginPath();
+          ctx.arc(xL, y, DOT_RADIUS, 0, Math.PI * 2);
+          ctx.fill();
+          ctx.beginPath();
+          ctx.arc(xR, y, DOT_RADIUS, 0, Math.PI * 2);
+          ctx.fill();
+        }
+      }
+    }
+    ctx.restore();
+  }
 
-    tokens.forEach((token, index) => {
-      const col = index % tokensPerRow;
-      const row = Math.floor(index / tokensPerRow);
+  function renderTokenSheet(ctx, L, tokens /* pageIndex not used here */) {
+    // Clear page
+    ctx.fillStyle = '#fff';
+    ctx.fillRect(0, 0, L.pageSize.width, L.pageSize.height);
 
-      if (row >= maxRows) return;
+    // Draw tokens
+    tokens.forEach((t, i) => {
+      const col = i % L.tokensPerRow;
+      const row = Math.floor(i / L.tokensPerRow);
+      if (row >= L.maxRows) return;
 
-      const unitX = pageMargin + col * (unitDims.width + gridGap);
-      const unitY = pageMargin + row * (unitDims.height + gridGap);
+      const ux = L.pageMargin + col * (L.unitDims.width + L.gridGap);
+      const uy = L.pageMargin + row * (L.unitDims.height + L.gridGap);
 
-      const flippedY = unitY + standingWhiteSpace;
-      const originalY = flippedY + tokenDims.height + foldGap;
+      const topY = uy + L.standingWhiteSpace; // flipped
+      const bottomY = topY + L.tokenDims.height + L.foldGap; // upright
 
-      drawTokenImage(
+      // draw with a tiny overlap so the two halves meet without a gap
+      drawImageCover(
         ctx,
-        token.image,
-        unitX,
-        flippedY,
-        tokenDims.width,
-        tokenDims.height,
+        t.image,
+        ux,
+        topY,
+        L.tokenDims.width,
+        L.tokenDims.height + PANEL_OVERLAP_MM,
         true
       );
-      drawTokenImage(
+      drawImageCover(
         ctx,
-        token.image,
-        unitX,
-        originalY,
-        tokenDims.width,
-        tokenDims.height,
+        t.image,
+        ux,
+        bottomY - PANEL_OVERLAP_MM,
+        L.tokenDims.width,
+        L.tokenDims.height + PANEL_OVERLAP_MM,
         false
       );
     });
+    if (L.perforationEdges) drawPerforationDots(ctx, L);
+    drawGrid(ctx, L);
   }
 
-  function generatePreview(layout, tokens, container) {
-    if (tokens.length === 0) {
-      container.innerHTML = `
-        <div class="preview-placeholder">
-          <div class="preview-placeholder-icon">🎯</div>
-          <div>Upload token images to see the sheet preview</div>
-        </div>
-      `;
-      return;
-    }
+  function generatePreview(layout, tokens, containerEl) {
+    if (!layout || !tokens?.length || !containerEl) return;
 
-    try {
-      isGeneratingPreview.value = true;
-
-      if (canvas.value) {
+    // Reset previous canvas
+    if (canvas.value) {
+      try {
         canvas.value.remove();
-      }
-
-      const containerWidth = container.offsetWidth || 600;
-      const { canvasElement, ctx } = createCanvas(layout, containerWidth);
-      canvas.value = canvasElement;
-
-      renderTokenSheet(ctx, layout, tokens.slice(0, layout.tokensPerPage), 0);
-
-      container.innerHTML = '';
-      container.appendChild(canvasElement);
-    } catch (error) {
-      console.error('Preview generation error:', error);
-      container.innerHTML = `
-        <div class="preview-placeholder">
-          <div class="preview-placeholder-icon">⚠️</div>
-          <div>Error generating preview: ${error.message}</div>
-        </div>
-      `;
-    } finally {
-      isGeneratingPreview.value = false;
+      } catch {}
+      canvas.value = null;
     }
+
+    const { el, ctx } = createCanvas(layout, containerEl.offsetWidth || 600);
+    canvas.value = el;
+
+    // Only render up to one page’s worth of tokens
+    const batch = tokens.slice(0, layout.tokensPerPage ?? tokens.length);
+    renderTokenSheet(ctx, layout, batch, 0);
+
+    containerEl.innerHTML = '';
+    containerEl.appendChild(el);
   }
 
   return {
     canvas,
-    isGeneratingPreview,
     generatePreview,
     renderTokenSheet
   };

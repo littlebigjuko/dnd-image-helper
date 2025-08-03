@@ -1,17 +1,19 @@
 import { jsPDF } from 'jspdf';
 import { ref } from 'vue';
 
-const PDF_RENDER_SCALE = 8;
-const A4_WIDTH_300DPI = 2480;
-const A4_HEIGHT_300DPI = 3508;
+// Canvas target sizes at ~300 DPI for A4
+const A4_WIDTH_300DPI = 2480; // px
+const A4_HEIGHT_300DPI = 3508; // px
 
 export function useTokenPdfGeneration() {
   const isGenerating = ref(false);
 
   function createTokenSheetsPDF(layout, tokenImages, renderTokenSheet) {
-    const { pageSize } = layout;
+    const { pageSize } = layout; // in mm
+    const isLandscape = pageSize.width > pageSize.height;
+
     const pdf = new jsPDF({
-      orientation: pageSize.width > pageSize.height ? 'landscape' : 'portrait',
+      orientation: isLandscape ? 'landscape' : 'portrait',
       unit: 'mm',
       format: [pageSize.width, pageSize.height],
       compress: false
@@ -20,9 +22,7 @@ export function useTokenPdfGeneration() {
     const totalPages = Math.ceil(tokenImages.length / layout.tokensPerPage);
 
     for (let pageIndex = 0; pageIndex < totalPages; pageIndex++) {
-      if (pageIndex > 0) {
-        pdf.addPage([pageSize.width, pageSize.height]);
-      }
+      if (pageIndex > 0) pdf.addPage([pageSize.width, pageSize.height]);
 
       const startIndex = pageIndex * layout.tokensPerPage;
       const endIndex = Math.min(
@@ -31,14 +31,17 @@ export function useTokenPdfGeneration() {
       );
       const pageTokens = tokenImages.slice(startIndex, endIndex);
 
+      // Prepare a temporary canvas to render at high resolution
       const tempCanvas = document.createElement('canvas');
       const tempCtx = tempCanvas.getContext('2d');
 
-      tempCanvas.width = A4_WIDTH_300DPI;
-      tempCanvas.height = A4_HEIGHT_300DPI;
+      tempCanvas.width = isLandscape ? A4_HEIGHT_300DPI : A4_WIDTH_300DPI;
+      tempCanvas.height = isLandscape ? A4_WIDTH_300DPI : A4_HEIGHT_300DPI;
 
-      const scaleX = A4_WIDTH_300DPI / pageSize.width;
-      const scaleY = A4_HEIGHT_300DPI / pageSize.height;
+      const targetW = tempCanvas.width;
+      const targetH = tempCanvas.height;
+      const scaleX = targetW / pageSize.width; // px per mm
+      const scaleY = targetH / pageSize.height; // px per mm
       const finalScale = Math.min(scaleX, scaleY);
 
       tempCtx.imageSmoothingEnabled = true;
@@ -49,7 +52,6 @@ export function useTokenPdfGeneration() {
       renderTokenSheet(tempCtx, layout, pageTokens, pageIndex);
 
       const imgData = tempCanvas.toDataURL('image/png');
-
       pdf.addImage(
         imgData,
         'PNG',
@@ -72,7 +74,7 @@ export function useTokenPdfGeneration() {
     showMessage
   ) {
     if (tokenImages.length === 0) {
-      showMessage('Please upload token images first', 'error');
+      showMessage && showMessage('Please upload token images first', 'error');
       return Promise.resolve(false);
     }
 
@@ -86,31 +88,25 @@ export function useTokenPdfGeneration() {
             tokenImages,
             renderTokenSheet
           );
-
-          const timestamp = new Date()
-            .toISOString()
-            .slice(0, 19)
-            .replace(/[:-]/g, '');
-          pdf.save(`token-sheets-${timestamp}.pdf`);
-
-          showMessage('Token sheets generated successfully!', 'success');
+          const ts = new Date().toISOString().slice(0, 19).replace(/[:-]/g, '');
+          pdf.save(`token-sheets-${ts}.pdf`);
+          showMessage &&
+            showMessage('Token sheets generated successfully!', 'success');
           resolve(true);
         } catch (error) {
-          showMessage(
-            'Failed to generate token sheets. Please try again.',
-            'error'
-          );
           console.error('PDF generation error:', error);
+          showMessage &&
+            showMessage(
+              'Failed to generate token sheets. Please try again.',
+              'error'
+            );
           resolve(false);
         } finally {
           isGenerating.value = false;
         }
-      }, 100);
+      }, 50);
     });
   }
 
-  return {
-    isGenerating,
-    generateTokenSheets
-  };
+  return { isGenerating, generateTokenSheets };
 }
