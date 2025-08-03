@@ -1,106 +1,109 @@
 <template>
   <div class="main-content">
-    <div ref="tokenMessageAreaRef"></div>
+    <div class="desktop-layout">
+      <div class="controls-column">
+        <div class="upload-section">
+          <div
+            class="upload-area"
+            ref="tokenUploadAreaRef"
+            @click="tokenFileInputRef?.click()"
+            @dragover.prevent="handleDragOver"
+            @dragleave="handleDragLeave"
+            @drop.prevent="handleTokenDrop"
+            :class="{ dragover: isDragOver }"
+          >
+            <div class="upload-icon">🎯</div>
+            <div class="upload-text">
+              Drop your token images here or click to browse
+            </div>
+            <div class="upload-hint">
+              Supports JPEG, PNG, WebP (max 5MB each, up to 50 tokens)
+            </div>
+          </div>
+          <input
+            type="file"
+            ref="tokenFileInputRef"
+            class="file-input"
+            accept="image/*"
+            multiple
+            @change="handleTokenUpload($event.target.files)"
+          />
+        </div>
 
-    <div class="upload-section">
-      <div
-        class="upload-area"
-        ref="tokenUploadAreaRef"
-        @click="tokenFileInputRef?.click()"
-        @dragover.prevent="handleDragOver"
-        @dragleave="handleDragLeave"
-        @drop.prevent="handleTokenDrop"
-        :class="{ dragover: isDragOver }"
-      >
-        <div class="upload-icon">🎯</div>
-        <div class="upload-text">
-          Drop your token images here or click to browse
-        </div>
-        <div class="upload-hint">
-          Supports JPEG, PNG, WebP (max 5MB each, up to 50 tokens)
-        </div>
-      </div>
-      <input
-        type="file"
-        ref="tokenFileInputRef"
-        class="file-input"
-        accept="image/*"
-        multiple
-        @change="handleTokenUpload($event.target.files)"
-      />
-    </div>
-
-    <div class="token-list-section">
-      <label class="control-label"
-        >Selected Tokens (<span>{{ tokenImages.length }}</span
-        >)</label
-      >
-      <div class="token-list" ref="tokenListRef">
-        <div v-if="tokenImages.length === 0" class="token-list-empty">
-          No tokens uploaded yet
-        </div>
-        <div
-          v-else
-          class="token-item"
-          v-for="(token, index) in tokenImages"
-          :key="index"
-        >
-          <button class="token-item-remove" @click="removeTokenItem(index)">
-            ×
-          </button>
-          <img :src="token.image.src" :alt="token.name" />
-          <div class="token-item-name">{{ token.name }}</div>
-        </div>
-      </div>
-    </div>
-
-    <div class="controls-section">
-      <div class="control-group">
-        <label class="control-label">Token Settings</label>
-        <div class="token-controls">
-          <div class="input-group">
-            <label class="input-label">Token Size</label>
-            <select
-              ref="tokenSizeSelectRef"
-              class="size-select"
-              v-model="tokenSize"
+        <div class="token-list-section">
+          <label class="control-label"
+            >Selected Tokens (<span>{{ tokenImages.length }}</span
+            >)</label
+          >
+          <div class="token-list" ref="tokenListRef">
+            <div v-if="tokenImages.length === 0" class="token-list-empty">
+              No tokens uploaded yet
+            </div>
+            <div
+              v-else
+              class="token-item"
+              v-for="(token, index) in tokenImages"
+              :key="index"
             >
-              <option value="small">Small (3cm height)</option>
-              <option value="medium">Medium (4.5cm height)</option>
-              <option value="high">High (6cm height)</option>
-            </select>
+              <button class="token-item-remove" @click="removeTokenItem(index)">
+                ×
+              </button>
+              <img :src="token.image.src" :alt="token.name" />
+              <div class="token-item-name">{{ token.name }}</div>
+            </div>
+          </div>
+        </div>
+
+        <div class="controls-section">
+          <div class="control-group">
+            <label class="control-label">Token Settings</label>
+            <div class="token-controls">
+              <div class="input-group">
+                <label class="input-label">Token Size</label>
+                <select
+                  ref="tokenSizeSelectRef"
+                  class="size-select"
+                  v-model="tokenSize"
+                >
+                  <option value="small">Small (3cm height)</option>
+                  <option value="medium">Medium (4.5cm height)</option>
+                  <option value="high">High (6cm height)</option>
+                </select>
+              </div>
+            </div>
+          </div>
+
+          <div class="control-group">
+            <label class="control-label">Actions</label>
+            <div class="action-buttons">
+              <button
+                ref="generateTokensBtnRef"
+                class="btn btn-primary"
+                :disabled="tokenImages.length === 0"
+                @click="generateTokenPDF"
+              >
+                📄 Generate Token Sheets
+              </button>
+              <button
+                ref="resetTokensBtnRef"
+                class="btn btn-secondary"
+                @click="resetTokenCreator"
+              >
+                🔄 Reset
+              </button>
+            </div>
           </div>
         </div>
       </div>
 
-      <div class="control-group">
-        <label class="control-label">Actions</label>
-        <div class="action-buttons">
-          <button
-            ref="generateTokensBtnRef"
-            class="btn btn-primary"
-            :disabled="tokenImages.length === 0"
-            @click="generateTokenPDF"
-          >
-            📄 Generate Token Sheets
-          </button>
-          <button
-            ref="resetTokensBtnRef"
-            class="btn btn-secondary"
-            @click="resetTokenCreator"
-          >
-            🔄 Reset
-          </button>
-        </div>
-      </div>
-    </div>
-
-    <div class="preview-section">
-      <label class="control-label">Preview</label>
-      <div class="preview-container" ref="tokenPreviewContainerRef">
-        <div class="preview-placeholder">
-          <div class="preview-placeholder-icon">🎯</div>
-          <div>Upload token images to see the sheet preview</div>
+      <div class="preview-column">
+        <div class="preview-section">
+          <div class="preview-container" ref="tokenPreviewContainerRef">
+            <div class="preview-placeholder">
+              <div class="preview-placeholder-icon">🎯</div>
+              <div>Upload token images to see the sheet preview</div>
+            </div>
+          </div>
         </div>
       </div>
     </div>
@@ -121,7 +124,6 @@ const tokenSizeSelectRef = ref(null);
 const generateTokensBtnRef = ref(null);
 const resetTokensBtnRef = ref(null);
 const tokenPreviewContainerRef = ref(null);
-const tokenMessageAreaRef = ref(null);
 
 const isDragOver = ref(false);
 
@@ -141,11 +143,8 @@ const {
   calculateTotalPages
 } = useTokenLayout();
 
-const {
-  canvas: tokenCanvas,
-  generatePreview: generateTokenPreview,
-  renderTokenSheet
-} = useTokenPreview();
+const { generatePreview: generateTokenPreview, renderTokenSheet } =
+  useTokenPreview();
 
 const { isGenerating: isTokenPdfGenerating, generateTokenSheets } =
   useTokenPdfGeneration();
@@ -158,29 +157,8 @@ function handleDragLeave() {
   isDragOver.value = false;
 }
 
-function showMessage(text, type) {
-  const messageElement = document.createElement('div');
-  messageElement.className = `message ${type}`;
-  messageElement.textContent = text;
-
-  if (tokenMessageAreaRef.value) {
-    tokenMessageAreaRef.value.appendChild(messageElement);
-    setTimeout(() => {
-      messageElement.remove();
-    }, 5000);
-  }
-}
-
-function clearMessages() {
-  if (tokenMessageAreaRef.value) {
-    tokenMessageAreaRef.value.innerHTML = '';
-  }
-}
-
 async function handleTokenUpload(files) {
-  const success = await processTokenFiles(files, (msg, type) =>
-    showMessage(msg, type)
-  );
+  const success = await processTokenFiles(files);
   if (success) {
     updateTokenPreview();
   }
@@ -251,11 +229,111 @@ watch([tokenImages, tokenSize], () => {
 
 <style scoped>
 .main-content {
-  padding: 32px;
+  padding: 10px;
+  width: 100%;
+  height: calc(100vh - 160px);
+}
+
+@media (min-width: 1025px) {
+  .main-content {
+    max-width: none;
+  }
+
+  .desktop-layout {
+    display: grid;
+    grid-template-columns: 400px 1fr;
+    gap: 10px;
+    height: 100%;
+  }
+
+  .controls-column {
+    display: flex;
+    flex-direction: column;
+    gap: 24px;
+    overflow-y: auto;
+  }
+
+  .preview-column {
+    display: flex;
+    flex-direction: column;
+    min-height: 0;
+  }
+
+  .preview-section {
+    flex: 1;
+    display: flex;
+    flex-direction: column;
+    min-height: 0;
+  }
+
+  .preview-container {
+    flex: 1;
+    overflow: auto;
+  }
+
+  .token-list {
+    grid-template-columns: repeat(auto-fill, minmax(100px, 1fr));
+    gap: 12px;
+  }
+
+  .controls-section {
+    display: grid;
+    grid-template-columns: 1fr;
+    gap: 16px;
+  }
+
+  .preview-canvas {
+    max-width: 100%;
+    max-height: none;
+  }
+}
+
+@media (max-width: 1024px) {
+  .main-content {
+    max-width: 1200px;
+    margin: 0 auto;
+    height: auto;
+  }
+
+  .desktop-layout {
+    display: block;
+  }
+
+  .controls-column {
+    display: block;
+  }
+
+  .preview-column {
+    display: block;
+  }
+
+  .token-list {
+    grid-template-columns: repeat(auto-fill, minmax(140px, 1fr));
+    max-width: 1400px;
+    margin: 0 auto 16px;
+  }
+
+  .controls-section {
+    max-width: 1000px;
+    margin: 0 auto 10px;
+    display: grid;
+    gap: 10px;
+    align-items: start;
+  }
+
+  .preview-container {
+    max-width: 1400px;
+    margin: 0 auto;
+  }
+
+  .preview-canvas {
+    max-width: 1200px;
+    max-height: 80vh;
+  }
 }
 
 .upload-section {
-  margin-bottom: 32px;
+  margin-bottom: 10px;
 }
 
 .upload-area {
@@ -297,9 +375,8 @@ watch([tokenImages, tokenSize], () => {
 
 .controls-section {
   display: grid;
-  grid-template-columns: 1fr 1fr;
-  gap: 32px;
-  margin-bottom: 32px;
+  gap: 10px;
+  margin-bottom: 10px;
 }
 
 .control-group {
@@ -369,10 +446,6 @@ watch([tokenImages, tokenSize], () => {
 
 .btn-secondary:hover:not(:disabled) {
   background: #e2e8f0;
-}
-
-.preview-section {
-  margin-bottom: 32px;
 }
 
 .preview-container {
@@ -452,7 +525,6 @@ watch([tokenImages, tokenSize], () => {
 
 .token-controls {
   display: grid;
-  grid-template-columns: 1fr 1fr;
   gap: 16px;
 }
 
@@ -472,7 +544,7 @@ watch([tokenImages, tokenSize], () => {
 }
 
 .token-list-section {
-  margin-bottom: 32px;
+  margin-bottom: 10px;
 }
 
 .token-list {
@@ -543,7 +615,7 @@ watch([tokenImages, tokenSize], () => {
   grid-column: 1 / -1;
   text-align: center;
   color: #94a3b8;
-  padding: 32px;
+  padding: 10px;
   font-style: italic;
 }
 

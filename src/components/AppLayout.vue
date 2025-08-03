@@ -32,19 +32,29 @@
 
 <style scoped>
 .container {
-  max-width: 1200px;
   margin: 0 auto;
   background: white;
   border-radius: 16px;
   box-shadow: 0 20px 40px rgba(0, 0, 0, 0.1);
   overflow: hidden;
+  width: 100%;
+}
+
+@media (max-width: 1024px) {
+  .container {
+    max-width: 1200px;
+  }
 }
 
 .header {
   background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
   color: white;
-  padding: 24px;
+  padding: 0;
   text-align: center;
+  display: flex;
+  align-items: center;
+  gap: 20px;
+  padding: 0 1rem;
 }
 
 .header h1 {
@@ -65,9 +75,14 @@
 
 .tab-buttons {
   display: flex;
-  max-width: 1200px;
   margin: 0 auto;
   padding: 0 24px;
+}
+
+@media (max-width: 1024px) {
+  .tab-buttons {
+    max-width: 1200px;
+  }
 }
 
 .tab-button {

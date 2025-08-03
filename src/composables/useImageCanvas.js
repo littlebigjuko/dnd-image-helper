@@ -38,7 +38,17 @@ export function useImageCanvas() {
     canvas.value.className = 'preview-canvas';
     ctx.value = canvas.value.getContext('2d');
 
-    const maxDisplaySize = 800;
+    const getMaxDisplaySize = () => {
+      if (window.innerWidth >= 1025) {
+        return 1200;
+      } else if (window.innerWidth >= 768) {
+        return 800;
+      } else {
+        return 600;
+      }
+    };
+
+    const maxDisplaySize = getMaxDisplaySize();
     const qualityMultiplier = 4;
     const scale = Math.min(
       maxDisplaySize / currentImage.value.width,
@@ -46,8 +56,13 @@ export function useImageCanvas() {
       1
     );
 
-    canvas.value.width = currentImage.value.width * scale * qualityMultiplier;
-    canvas.value.height = currentImage.value.height * scale * qualityMultiplier;
+    const displayWidth = currentImage.value.width * scale;
+    const displayHeight = currentImage.value.height * scale;
+
+    canvas.value.width = displayWidth * qualityMultiplier;
+    canvas.value.height = displayHeight * qualityMultiplier;
+    canvas.value.style.width = `${displayWidth}px`;
+    canvas.value.style.height = `${displayHeight}px`;
 
     container.innerHTML = '';
     container.appendChild(canvas.value);

@@ -2,86 +2,95 @@
   <div class="main-content">
     <div ref="messageAreaRef"></div>
 
-    <div class="upload-section">
-      <div
-        class="upload-area"
-        ref="uploadAreaRef"
-        @click="fileInputRef?.click()"
-        @dragover.prevent="handleDragOver"
-        @dragleave="handleDragLeave"
-        @drop.prevent="handleDrop"
-        :class="{ dragover: isDragOver }"
-      >
-        <div class="upload-icon">📁</div>
-        <div class="upload-text">Drop your image here or click to browse</div>
-        <div class="upload-hint">Supports JPEG, PNG, WebP, GIF (max 10MB)</div>
-      </div>
-      <input
-        type="file"
-        ref="fileInputRef"
-        class="file-input"
-        accept="image/*"
-        @change="handleImageUpload($event.target.files)"
-      />
-    </div>
-
-    <div class="controls-section">
-      <div class="control-group">
-        <label class="control-label">Grid Settings</label>
-        <div class="grid-controls">
-          <div class="input-group">
-            <label class="input-label">Rows</label>
-            <input
-              type="number"
-              ref="rowsInputRef"
-              class="number-input"
-              min="1"
-              max="10"
-              v-model.number="rows"
-            />
+    <div class="desktop-layout">
+      <div class="controls-column">
+        <div class="upload-section">
+          <div
+            class="upload-area"
+            ref="uploadAreaRef"
+            @click="fileInputRef?.click()"
+            @dragover.prevent="handleDragOver"
+            @dragleave="handleDragLeave"
+            @drop.prevent="handleDrop"
+            :class="{ dragover: isDragOver }"
+          >
+            <div class="upload-icon">📁</div>
+            <div class="upload-text">
+              Drop your image here or click to browse
+            </div>
+            <div class="upload-hint">
+              Supports JPEG, PNG, WebP, GIF (max 10MB)
+            </div>
           </div>
-          <div class="input-group">
-            <label class="input-label">Columns</label>
-            <input
-              type="number"
-              ref="colsInputRef"
-              class="number-input"
-              min="1"
-              max="10"
-              v-model.number="cols"
-            />
+          <input
+            type="file"
+            ref="fileInputRef"
+            class="file-input"
+            accept="image/*"
+            @change="handleImageUpload($event.target.files)"
+          />
+        </div>
+
+        <div class="controls-section">
+          <div class="control-group">
+            <label class="control-label">Grid Settings</label>
+            <div class="grid-controls">
+              <div class="input-group">
+                <label class="input-label">Rows</label>
+                <input
+                  type="number"
+                  ref="rowsInputRef"
+                  class="number-input"
+                  min="1"
+                  max="10"
+                  v-model.number="rows"
+                />
+              </div>
+              <div class="input-group">
+                <label class="input-label">Columns</label>
+                <input
+                  type="number"
+                  ref="colsInputRef"
+                  class="number-input"
+                  min="1"
+                  max="10"
+                  v-model.number="cols"
+                />
+              </div>
+            </div>
+          </div>
+
+          <div class="control-group">
+            <label class="control-label">Actions</label>
+            <div class="action-buttons">
+              <button
+                ref="generateBtnRef"
+                class="btn btn-primary"
+                :disabled="!selectedFile"
+                @click="generatePDF"
+              >
+                📄 Generate PDF
+              </button>
+              <button
+                ref="resetBtnRef"
+                class="btn btn-secondary"
+                @click="resetImageSplitter"
+              >
+                🔄 Reset
+              </button>
+            </div>
           </div>
         </div>
       </div>
 
-      <div class="control-group">
-        <label class="control-label">Actions</label>
-        <div class="action-buttons">
-          <button
-            ref="generateBtnRef"
-            class="btn btn-primary"
-            :disabled="!selectedFile"
-            @click="generatePDF"
-          >
-            📄 Generate PDF
-          </button>
-          <button
-            ref="resetBtnRef"
-            class="btn btn-secondary"
-            @click="resetImageSplitter"
-          >
-            🔄 Reset
-          </button>
-        </div>
-      </div>
-    </div>
-
-    <div class="preview-section">
-      <label class="control-label">Preview</label>
-      <div class="preview-container" ref="previewContainerRef">
-        <div class="preview-placeholder">
-          <div class="preview-placeholder-icon">🖼️</div>
-          <div>Upload an image to see the grid preview</div>
+      <div class="preview-column">
+        <div class="preview-section">
+          <div class="preview-container" ref="previewContainerRef">
+            <div class="preview-placeholder">
+              <div class="preview-placeholder-icon">🖼️</div>
+              <div>Upload an image to see the grid preview</div>
+            </div>
+          </div>
         </div>
       </div>
     </div>
@@ -203,17 +212,79 @@ onMounted(() => {});
 
 <style scoped>
 .main-content {
-  padding: 32px;
+  padding: 10px;
+  width: 100%;
+}
+
+.desktop-layout {
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+}
+
+@media (min-width: 1025px) {
+  .main-content {
+    max-width: none;
+    padding: 10px;
+    height: calc(100vh - 160px);
+    overflow: hidden;
+  }
+
+  .desktop-layout {
+    display: grid;
+    grid-template-columns: 400px 1fr;
+    gap: 10px;
+    height: 100%;
+  }
+
+  .controls-column {
+    display: flex;
+    flex-direction: column;
+    gap: 24px;
+    overflow-y: auto;
+  }
+
+  .preview-column {
+    display: flex;
+    flex-direction: column;
+    min-height: 0;
+  }
+
+  .preview-section {
+    flex: 1;
+    display: flex;
+    flex-direction: column;
+    min-height: 0;
+  }
+
+  .preview-container {
+    flex: 1;
+    min-height: 0;
+  }
+
+  .controls-section {
+    display: flex;
+    flex-direction: column;
+    gap: 24px;
+    margin-bottom: 0;
+  }
+}
+
+@media (max-width: 1024px) {
+  .main-content {
+    max-width: 1200px;
+    margin: 0 auto;
+  }
 }
 
 .upload-section {
-  margin-bottom: 32px;
+  margin-bottom: 0;
 }
 
 .upload-area {
   border: 2px dashed #e2e8f0;
   border-radius: 12px;
-  padding: 48px 24px;
+  padding: 10px 24px;
   text-align: center;
   background: #f8fafc;
   transition: all 0.3s ease;
@@ -249,9 +320,8 @@ onMounted(() => {});
 
 .controls-section {
   display: grid;
-  grid-template-columns: 1fr 1fr;
-  gap: 32px;
-  margin-bottom: 32px;
+  gap: 10px;
+  margin-bottom: 10px;
 }
 
 .control-group {
@@ -303,6 +373,7 @@ onMounted(() => {});
 
 .action-buttons {
   display: flex;
+  flex-direction: column;
   gap: 12px;
 }
 
@@ -344,10 +415,6 @@ onMounted(() => {});
   background: #e2e8f0;
 }
 
-.preview-section {
-  margin-bottom: 32px;
-}
-
 .preview-container {
   border: 1px solid #e2e8f0;
   border-radius: 12px;
@@ -361,7 +428,6 @@ onMounted(() => {});
 
 .preview-canvas {
   max-width: 100%;
-  max-height: 600px;
   display: block;
 }
 
