@@ -5,7 +5,7 @@
 The Splitter project is a Vue.js 3 application that provides two main image processing features:
 
 1. **Image Splitter** - Splits images into grid parts for poster printing
-2. **Token Creator** - Creates printable token sheets for tabletop gaming
+2. **Standee Creator** - Creates printable standee sheets for tabletop gaming
 
 The application works entirely in the browser using Canvas API and generates high-quality PDFs optimized for A4 printing at 300 DPI.
 
@@ -27,19 +27,55 @@ splitter/
 ├── src/
 │   ├── App.vue                 # Main application component
 │   ├── main.ts                 # Vue app initialization
+│   ├── components/             # Reusable Vue components
+│   │   ├── AppLayout.vue       # Main layout with tab navigation
+│   │   ├── FileUploadArea.vue  # Drag-and-drop file upload component
+│   │   ├── MessageDisplay.vue  # Toast notification component
+│   │   └── PreviewContainer.vue # Canvas preview wrapper
+│   ├── views/                  # Page components
+│   │   ├── ImageSplitter.vue   # Image splitting interface
+│   │   └── StandeeCreator.vue  # Standee creation interface
 │   ├── composables/            # Reusable composition functions
 │   │   ├── useFileUpload.js    # File upload handling
 │   │   ├── useImageCanvas.js   # Canvas operations for image splitting
 │   │   ├── usePdfGeneration.js # PDF generation for split images
-│   │   ├── useTabManager.js    # Tab navigation management
-│   │   ├── useTokenLayout.js   # Token sheet layout calculations
-│   │   ├── useTokenPdfGeneration.js # PDF generation for tokens
-│   │   ├── useTokenPreview.js  # Token sheet preview rendering
-│   │   └── useTokenUpload.js   # Token image upload handling
+│   │   ├── useStandeeLayout.js # Standee sheet layout calculations
+│   │   ├── useStandeePdfGeneration.js # PDF generation for standees
+│   │   ├── useStandeePreview.js # Standee sheet preview rendering
+│   │   └── useStandeeUpload.js # Standee image upload handling
+│   ├── router/                 # Vue Router configuration
+│   │   └── index.ts            # Route definitions
 │   └── assets/                 # Static assets and styles
 ├── index.html                  # Application entry point
 └── architecture-plan.md        # Initial architecture design
 ```
+
+## Application Components
+
+### Core Layout
+
+- **AppLayout.vue** - Main application layout with header, tab navigation, and router-view for switching between features
+
+### Shared Components
+
+- **FileUploadArea.vue** - Reusable drag-and-drop file upload component with configurable accept types and multiple file support
+- **PreviewContainer.vue** - Canvas wrapper component that provides a consistent preview area for both image splitting and standee creation
+- **MessageDisplay.vue** - Toast notification component for displaying success, error, and info messages to users
+
+### Views
+
+- **ImageSplitter.vue** - Complete interface for image splitting functionality with grid controls and PDF generation
+- **StandeeCreator.vue** - Interface for standee creation with size selection, batch management, and sheet generation
+
+## Routing
+
+The application uses Vue Router for navigation between the two main features:
+
+- **/** - Redirects to `/image-splitter`
+- **/image-splitter** - Image Splitter view
+- **/standee-creator** - Standee Creator view
+
+Navigation is handled through tab buttons in the AppLayout component with active state styling.
 
 ## Key Features
 
@@ -72,44 +108,57 @@ Splits large images into grid pieces for poster printing across multiple A4 page
 - JPEG compression at 0.92 quality
 - L-shaped crop marks with 8mm length, 2mm offset
 
-### 2. Token Creation Functionality
+### 2. Standee Creation Functionality
 
 #### Purpose
 
-Creates printable token sheets for tabletop gaming with fold lines for standing tokens.
+Creates printable standee sheets for tabletop gaming with fold lines for standing standees.
 
 #### Technical Details
 
-- **Token Sizes**:
-  - Small: 120mm (12cm)
-  - Medium: 180mm (18cm)
-  - High: 240mm (24cm)
-- **Max Tokens**: 50 per batch
-- **File Size Limit**: 5MB per token image
+- **Standee Sizes**:
+  - Small: 30mm (3cm)
+  - Medium: 45mm (4.5cm)
+  - Large: 60mm (6cm)
+  - Very-large: 85mm (8.5cm)
+  - Colossal: 150mm (15cm)
+- **Max Standees**: 50 per batch
+- **File Size Limit**: 5MB per standee image
 
 #### Layout Calculations
 
 - **Page Margin**: 40mm
 - **Standing White Space**: 40mm (for base stability)
 - **Fold Gap**: 4mm (between front and back)
-- **Grid Gap**: 4mm (between tokens)
-- **Unit Dimensions**: Token width × (white space + height + fold gap + height + white space)
+- **Grid Gap**: 4mm (between standees)
+- **Unit Dimensions**: Standee width × (white space + height + fold gap + height + white space)
 
-#### Token Sheet Structure
+#### Standee Sheet Structure
 
-Each token unit contains:
+Each standee unit contains:
 
 1. Standing white space (40mm)
-2. Flipped token image (for back)
+2. Flipped standee image (for back)
 3. Fold gap (4mm)
-4. Original token image (for front)
+4. Original standee image (for front)
 5. Standing white space (40mm)
 
-## Recent Improvements
+## Recent Changes
+
+### Token to Standee Refactoring
+
+The project recently underwent a comprehensive refactoring to rename "Token" functionality to "Standee" for better clarity:
+
+- Renamed `useTokenLayout.js` → `useStandeeLayout.js`
+- Renamed `useTokenPdfGeneration.js` → `useStandeePdfGeneration.js`
+- Renamed `useTokenPreview.js` → `useStandeePreview.js`
+- Renamed `useTokenUpload.js` → `useStandeeUpload.js`
+- Renamed `TokenCreator.vue` → `StandeeCreator.vue`
+- Updated all internal references and terminology
 
 ### Enhanced Quality for A4 Printing
 
-The project recently underwent significant improvements to enhance token image quality for A4 printing:
+The project recently underwent significant improvements to enhance standee image quality for A4 printing:
 
 #### Resolution Settings
 
@@ -135,9 +184,9 @@ The project recently underwent significant improvements to enhance token image q
    - No compression in jsPDF (`compress: false`)
    - Image format set to 'NONE' for no additional compression
 
-3. **Token Scaling**:
+3. **Standee Scaling**:
    - Precise scaling calculations to fit A4 dimensions
-   - Maintains aspect ratio (1:1 for square tokens)
+   - Maintains aspect ratio (1:1 for square standees)
    - Padding of 2mm for clean edges
 
 ## Technical Decisions
@@ -157,13 +206,13 @@ The project recently underwent significant improvements to enhance token image q
 ### Composables Pattern
 
 - **Modular Design**: Each feature in separate composable
-- **Reusability**: Shared logic between image splitting and token creation
+- **Reusability**: Shared logic between image splitting and standee creation
 - **Maintainability**: Clear separation of concerns
 
 ### Grid-Based Layouts
 
 - **Mathematical Precision**: Exact calculations for margins and gaps
-- **Flexibility**: Supports different token sizes on same principles
+- **Flexibility**: Supports different standee sizes on same principles
 - **Print Optimization**: Accounts for cutting tolerances
 
 ## Performance Considerations
@@ -177,7 +226,7 @@ The project recently underwent significant improvements to enhance token image q
 ### File Size Handling
 
 - **Image Splitter**: 100MB limit to prevent browser crashes
-- **Token Creator**: 5MB per token, 50 token maximum
+- **Standee Creator**: 5MB per standee, 50 standee maximum
 - **Validation**: File size checked before processing
 
 ### Rendering Strategy
@@ -185,6 +234,14 @@ The project recently underwent significant improvements to enhance token image q
 - **Asynchronous Processing**: Uses setTimeout for non-blocking PDF generation
 - **Progress Feedback**: Loading states during generation
 - **Error Boundaries**: Try-catch blocks prevent app crashes
+
+## Code Quality Issues
+
+### Debug Code Cleanup Needed
+
+- **StandeeCreator.vue**: Contains multiple `console.log` statements that should be removed for production
+  - Lines include container diagnostics, CSS debugging, and processing logs
+  - These were added during development for debugging standee preview rendering issues
 
 ## Future Considerations
 

@@ -2,32 +2,15 @@
   <div class="shared-main-content">
     <div class="shared-desktop-layout">
       <div class="shared-controls-column">
-        <div class="shared-upload-section">
-          <div
-            class="shared-upload-area"
-            ref="uploadAreaRef"
-            @click="fileInputRef?.click()"
-            @dragover.prevent="handleDragOver"
-            @dragleave="handleDragLeave"
-            @drop.prevent="handleDrop"
-            :class="{ dragover: isDragOver }"
-          >
-            <div class="shared-upload-icon">📁</div>
-            <div class="shared-upload-text">
-              Drop your image here or click to browse
-            </div>
-            <div class="shared-upload-hint">
-              Supports JPEG, PNG, WebP, GIF (max 10MB)
-            </div>
-          </div>
-          <input
-            type="file"
-            ref="fileInputRef"
-            class="shared-file-input"
-            accept="image/*"
-            @change="handleImageUpload($event.target.files)"
-          />
-        </div>
+        <FileUploadArea
+          ref="uploadAreaRef"
+          icon="📁"
+          upload-text="Drop your image here or click to browse"
+          hint-text="Supports JPEG, PNG, WebP, GIF (max 10MB)"
+          accept="image/*"
+          :multiple="false"
+          @files-selected="handleImageUpload"
+        />
 
         <div class="shared-controls-section">
           <div class="shared-control-group">
@@ -82,14 +65,12 @@
       </div>
 
       <div class="shared-preview-column">
-        <div class="shared-preview-section">
-          <div class="shared-preview-container" ref="previewContainerRef">
-            <div class="shared-preview-placeholder">
-              <div class="shared-preview-placeholder-icon">🖼️</div>
-              <div>Upload an image to see the grid preview</div>
-            </div>
-          </div>
-        </div>
+        <PreviewContainer
+          ref="previewContainerRef"
+          placeholder-icon="🖼️"
+          placeholder-text="Upload an image to see the grid preview"
+          :show-placeholder="!selectedFile"
+        />
       </div>
     </div>
 
@@ -104,13 +85,14 @@
 
 <script setup>
 import { onMounted, ref, watch } from 'vue';
+import FileUploadArea from '../components/FileUploadArea.vue';
 import MessageDisplay from '../components/MessageDisplay.vue';
+import PreviewContainer from '../components/PreviewContainer.vue';
 import { useFileUpload } from '../composables/useFileUpload';
 import { useImageCanvas } from '../composables/useImageCanvas';
 import { usePdfGeneration } from '../composables/usePdfGeneration';
 
 const uploadAreaRef = ref(null);
-const fileInputRef = ref(null);
 const previewContainerRef = ref(null);
 const rowsInputRef = ref(null);
 const colsInputRef = ref(null);
@@ -126,20 +108,15 @@ const currentMessage = ref({
   show: false
 });
 
-const {
-  selectedFile,
-  isDragOver,
-  handleDragOver,
-  handleDragLeave,
-  handleDrop,
-  handleFileSelect,
-  clearFile
-} = useFileUpload((imageSrc) => {
-  loadImage(imageSrc).then(() => {
-    createCanvas(previewContainerRef.value);
-    updatePreview();
-  });
-}, showMessage);
+const { selectedFile, handleFileSelect, clearFile } = useFileUpload(
+  (imageSrc) => {
+    loadImage(imageSrc).then(() => {
+      createCanvas(previewContainerRef.value.getContainer());
+      updatePreview();
+    });
+  },
+  showMessage
+);
 
 const {
   currentImage,
@@ -194,14 +171,8 @@ function resetImageSplitter() {
   if (rowsInputRef.value) rowsInputRef.value.value = '2';
   if (colsInputRef.value) colsInputRef.value.value = '2';
   if (generateBtnRef.value) generateBtnRef.value.disabled = true;
-  if (previewContainerRef.value) {
-    previewContainerRef.value.innerHTML = `
-      <div class="shared-preview-placeholder">
-        <div class="shared-preview-placeholder-icon">🖼️</div>
-        <div>Upload an image to see the grid preview</div>
-      </div>
-    `;
-  }
+  if (uploadAreaRef.value) uploadAreaRef.value.resetInput();
+  if (previewContainerRef.value) previewContainerRef.value.resetContainer();
   showMessage('Reset complete', 'info');
 }
 

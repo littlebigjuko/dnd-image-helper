@@ -354,11 +354,11 @@ a,
    SHARED TOKEN COMPONENTS
    ======================================== */
 
-.shared-token-list-section {
+.shared-standee-list-section {
   margin-bottom: 10px;
 }
 
-.shared-token-list {
+.shared-standee-list {
   display: grid;
   grid-template-columns: repeat(auto-fill, minmax(120px, 1fr));
   gap: 16px;
@@ -369,7 +369,7 @@ a,
   min-height: 120px;
 }
 
-.shared-token-item {
+.shared-standee-item {
   position: relative;
   background: white;
   border: 1px solid #e2e8f0;
@@ -379,21 +379,20 @@ a,
   transition: all 0.2s ease;
 }
 
-.shared-token-item:hover {
+.shared-standee-item:hover {
   border-color: #667eea;
   transform: translateY(-2px);
   box-shadow: 0 4px 12px rgba(0, 0, 0, 0.1);
 }
 
-.shared-token-item img {
-  width: 100%;
+.shared-standee-item img {
   height: 80px;
   object-fit: cover;
   border-radius: 4px;
   margin-bottom: 8px;
 }
 
-.shared-token-item-name {
+.shared-standee-item-name {
   font-size: 0.875rem;
   color: #475569;
   white-space: nowrap;
@@ -401,7 +400,7 @@ a,
   text-overflow: ellipsis;
 }
 
-.shared-token-list-empty {
+.shared-standee-list-empty {
   grid-column: 1 / -1;
   text-align: center;
   color: #94a3b8;
@@ -409,7 +408,7 @@ a,
   font-style: italic;
 }
 
-.shared-token-controls {
+.shared-standee-controls {
   display: grid;
   gap: 16px;
 }
@@ -435,7 +434,7 @@ a,
     display: block;
   }
 
-  .shared-token-list {
+  .shared-standee-list {
     grid-template-columns: repeat(auto-fill, minmax(140px, 1fr));
     max-width: 1400px;
     margin: 0 auto 16px;
@@ -479,12 +478,12 @@ a,
     padding: 20px;
   }
 
-  .shared-token-list {
+  .shared-standee-list {
     grid-template-columns: repeat(auto-fill, minmax(100px, 1fr));
     gap: 12px;
   }
 
-  .shared-token-controls {
+  .shared-standee-controls {
     flex-direction: column;
     gap: 12px;
   }

@@ -1,6 +1,6 @@
 import { createRouter, createWebHistory } from 'vue-router';
 import ImageSplitter from '../views/ImageSplitter.vue';
-import TokenCreator from '../views/TokenCreator.vue';
+import StandeeCreator from '../views/StandeeCreator.vue';
 
 const routes = [
   {
@@ -13,9 +13,9 @@ const routes = [
     component: ImageSplitter
   },
   {
-    path: '/token-creator',
-    name: 'token-creator',
-    component: TokenCreator
+    path: '/standee-creator',
+    name: 'standee-creator',
+    component: StandeeCreator
   }
 ];
 

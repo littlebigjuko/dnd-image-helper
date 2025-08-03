@@ -2,7 +2,7 @@
   <div class="container">
     <div class="header">
       <h1>Image Tools</h1>
-      <p>Split images into grids and create printable token sheets</p>
+      <p>Split images into grids and create printable standee sheets</p>
     </div>
 
     <div class="tab-container">
@@ -15,11 +15,11 @@
           🖼️ Image Splitter
         </router-link>
         <router-link
-          to="/token-creator"
+          to="/standee-creator"
           class="tab-button"
-          :class="{ active: $route.path === '/token-creator' }"
+          :class="{ active: $route.path === '/standee-creator' }"
         >
-          🎯 Token Creator
+          🎯 Standee Creator
         </router-link>
       </div>
     </div>
