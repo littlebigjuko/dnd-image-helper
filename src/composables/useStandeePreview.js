@@ -116,23 +116,16 @@ export function useStandeePreview() {
 
     // Horizontal guides at internal row boundaries (left → right edge of page)
     for (let r = 1; r < maxRows; r++) {
-      const y = y0 + r * unitDims.height + (r - 1) * gridGap;
+      let y = y0 + r * unitDims.height + (r - 1) * gridGap;
+
+      const prevRowIsEven = (r - 1) % 2 === 0;
+      if (prevRowIsEven) {
+        y += standingWhiteSpace;
+      }
+
       ctx.beginPath();
       ctx.moveTo(0, y);
       ctx.lineTo(L.pageSize.width, y);
-      ctx.stroke();
-    }
-
-    // Fold line across the center of each unit (full page width)
-    for (let r = 0; r < maxRows; r++) {
-      const yFold =
-        y0 +
-        r * (unitDims.height + gridGap) +
-        standingWhiteSpace +
-        standeeDims.height;
-      ctx.beginPath();
-      ctx.moveTo(0, yFold);
-      ctx.lineTo(L.pageSize.width, yFold);
       ctx.stroke();
     }
 
@@ -164,6 +157,63 @@ export function useStandeePreview() {
         }
       }
     }
+    ctx.restore();
+  }
+
+  function drawStandeeNumber(ctx, x, y, number, size = 12) {
+    const radius = size * 0.4;
+    const fontSize = size * 0.6;
+    ctx.save();
+    ctx.fillStyle = 'white';
+    ctx.strokeStyle = 'black';
+    ctx.lineWidth = 0.5;
+
+    ctx.beginPath();
+    ctx.arc(x, y, radius, 0, 2 * Math.PI);
+    ctx.fill();
+    ctx.stroke();
+
+    ctx.fillStyle = 'black';
+    ctx.font = `bold ${fontSize}px Arial`;
+    ctx.textAlign = 'center';
+    ctx.textBaseline = 'middle';
+    ctx.fillText(number.toString(), x, y);
+
+    ctx.restore();
+  }
+
+  function drawCombatTypeIcon(ctx, x, y, type, size = 12) {
+    const iconSize = size * 0.8;
+
+    ctx.save();
+    ctx.fillStyle = 'white';
+    ctx.strokeStyle = 'black';
+    ctx.lineWidth = 1;
+
+    ctx.fillStyle = 'black';
+    ctx.font = `${iconSize}px Arial`;
+    ctx.textAlign = 'center';
+    ctx.textBaseline = 'middle';
+
+    const icon = type === 'melee' ? '⚔️' : '🏹';
+    ctx.fillText(icon, x, y);
+
+    ctx.restore();
+  }
+
+  function drawBossIndicator(ctx, x, y, size = 12) {
+    const iconSize = size;
+    ctx.save();
+    ctx.fillStyle = '#FFD700';
+    ctx.strokeStyle = '#B8860B';
+    ctx.lineWidth = 1;
+
+    ctx.fillStyle = '#8B4513';
+    ctx.font = `${iconSize}px Arial`;
+    ctx.textAlign = 'center';
+    ctx.textBaseline = 'middle';
+    ctx.fillText('👑', x, y);
+
     ctx.restore();
   }
 
@@ -227,15 +277,72 @@ export function useStandeePreview() {
           false
         );
       }
+
+      const legAreaY = isEvenRow
+        ? uy + L.unitDims.height - L.legSpace / 2
+        : uy + L.legSpace / 2;
+
+      const legAreaHeight = L.legSpace;
+      const indicatorSize = Math.min(
+        legAreaHeight * 0.6,
+        L.unitDims.width * 0.15
+      );
+      const indicatorSpacing = indicatorSize * 0.8;
+      const visibleIndicators = [];
+      if (t.duplicateNumber) {
+        visibleIndicators.push('duplicate');
+      }
+      if (t.combatType && t.combatType !== 'none') {
+        visibleIndicators.push('combat');
+      }
+      if (t.isBoss) {
+        visibleIndicators.push('boss');
+      }
+
+      if (visibleIndicators.length > 0) {
+        const totalIndicatorWidth =
+          visibleIndicators.length * indicatorSize +
+          (visibleIndicators.length - 1) * indicatorSpacing;
+        const startX = ux + (L.unitDims.width - totalIndicatorWidth) / 2;
+
+        let currentX = startX;
+
+        visibleIndicators.forEach((type) => {
+          if (type === 'duplicate') {
+            drawStandeeNumber(
+              ctx,
+              currentX + indicatorSize / 2,
+              legAreaY,
+              t.duplicateNumber,
+              indicatorSize
+            );
+          } else if (type === 'combat') {
+            drawCombatTypeIcon(
+              ctx,
+              currentX + indicatorSize / 2,
+              legAreaY,
+              t.combatType,
+              indicatorSize
+            );
+          } else if (type === 'boss') {
+            drawBossIndicator(
+              ctx,
+              currentX + indicatorSize / 2,
+              legAreaY,
+              indicatorSize
+            );
+          }
+
+          currentX += indicatorSize + indicatorSpacing;
+        });
+      }
     });
     if (L.perforationEdges) drawPerforationDots(ctx, L);
     drawGrid(ctx, L);
   }
 
   function generatePreview(layout, standees, containerEl) {
-    console.log('generatePreview called:', { layout, standees, containerEl });
     if (!layout || !standees?.length || !containerEl) {
-      console.log('generatePreview early return - missing params');
       return;
     }
 
@@ -250,12 +357,10 @@ export function useStandeePreview() {
     canvas.value = el;
 
     const batch = standees.slice(0, layout.standeesPerPage ?? standees.length);
-    console.log('Rendering batch:', batch.length, 'standees');
     renderStandeeSheet(ctx, layout, batch);
 
     containerEl.innerHTML = '';
     containerEl.appendChild(el);
-    console.log('Canvas appended to container');
   }
 
   return {

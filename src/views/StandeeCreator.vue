@@ -51,6 +51,50 @@
               </div>
               <img :src="t.image.src" :alt="t.name" />
               <div class="shared-standee-item-name">{{ t.name }}</div>
+              <div class="shared-standee-metadata">
+                <div class="metadata-row">
+                  <label>Type:</label>
+                  <select
+                    :value="t.metadata?.combatType || 'none'"
+                    @change="
+                      updateStandeeMetadataValue(
+                        t.id,
+                        'combatType',
+                        $event.target.value
+                      )
+                    "
+                    class="metadata-select"
+                  >
+                    <option value="none">None</option>
+                    <option value="melee">Melee</option>
+                    <option value="ranged">Ranged</option>
+                  </select>
+                </div>
+                <div class="metadata-row">
+                  <label class="metadata-checkbox-label">
+                    <input
+                      type="checkbox"
+                      :checked="t.metadata?.isBoss || false"
+                      @change="
+                        updateStandeeMetadataValue(
+                          t.id,
+                          'isBoss',
+                          $event.target.checked
+                        )
+                      "
+                    />
+                    Boss
+                  </label>
+                </div>
+                <div
+                  class="metadata-row"
+                  v-if="t.metadata?.duplicateNumber > 1"
+                >
+                  <span class="duplicate-indicator"
+                    >Copy #{{ t.metadata.duplicateNumber }}</span
+                  >
+                </div>
+              </div>
             </div>
           </div>
         </div>
@@ -69,6 +113,32 @@
                   <option value="very-large">Very Large (8.5cm height)</option>
                   <!-- <option value="colossal">Colossal (15cm height)</option> -->
                 </select>
+              </div>
+            </div>
+          </div>
+
+          <!-- Batch Metadata Operations -->
+          <div class="shared-control-group" v-if="standeeImages.length > 0">
+            <label class="shared-control-label">Batch Operations</label>
+            <div class="batch-metadata-controls">
+              <div class="batch-control-row">
+                <label>Apply to All:</label>
+                <select v-model="batchCombatType" class="batch-select">
+                  <option value="none">None</option>
+                  <option value="melee">Melee</option>
+                  <option value="ranged">Ranged</option>
+                </select>
+                <button @click="applyBatchCombatType" class="batch-btn">
+                  Set Type
+                </button>
+              </div>
+              <div class="batch-control-row">
+                <button @click="applyBatchBossStatus(true)" class="batch-btn">
+                  Mark All Boss
+                </button>
+                <button @click="applyBatchBossStatus(false)" class="batch-btn">
+                  Clear All Boss
+                </button>
               </div>
             </div>
           </div>
@@ -110,6 +180,7 @@ import { nextTick, ref, watch } from 'vue';
 import FileUploadArea from '../components/FileUploadArea.vue';
 import PreviewContainer from '../components/PreviewContainer.vue';
 import { useStandeeLayout } from '../composables/useStandeeLayout';
+import { useStandeeMetadata } from '../composables/useStandeeMetadata';
 import { useStandeePdfGeneration } from '../composables/useStandeePdfGeneration';
 import { useStandeePreview } from '../composables/useStandeePreview';
 import { useStandeeUpload } from '../composables/useStandeeUpload';
@@ -124,18 +195,49 @@ const {
 const { standeeSize, perforationEdges, sheetLayout } = useStandeeLayout();
 const { generatePreview, renderStandeeSheet } = useStandeePreview();
 const { generateStandeeSheets } = useStandeePdfGeneration();
+const {
+  enhanceStandeeWithMetadata,
+  updateStandeeMetadata,
+  applyMetadataToAll
+} = useStandeeMetadata();
 
 const uploadAreaRef = ref(null);
 const previewRef = ref(null);
+const batchCombatType = ref('none');
+
+function updateStandeeMetadataValue(standeeId, key, value) {
+  standeeImages.value = updateStandeeMetadata(standeeImages.value, standeeId, {
+    [key]: value
+  });
+}
+
+function applyBatchCombatType() {
+  standeeImages.value = applyMetadataToAll(standeeImages.value, {
+    combatType: batchCombatType.value
+  });
+}
+
+function applyBatchBossStatus(isBoss) {
+  standeeImages.value = applyMetadataToAll(standeeImages.value, { isBoss });
+}
 
 async function onFiles(files) {
-  console.log('onFiles called with', files.length, 'files');
   const ok = await processFiles(files);
-  console.log('processFiles result:', ok);
+
   if (ok) {
-    console.log('Calling drawPreview...');
+    enhanceAllStandeesWithMetadata();
     drawPreview();
   }
+}
+
+function enhanceAllStandeesWithMetadata() {
+  const enhanced = [];
+  for (const standee of standeeImages.value) {
+    const enhancedStandee = enhanceStandeeWithMetadata(standee, enhanced);
+    enhanced.push(enhancedStandee);
+  }
+
+  standeeImages.value.splice(0, standeeImages.value.length, ...enhanced);
 }
 
 async function remove(i) {
@@ -147,14 +249,12 @@ async function remove(i) {
 function duplicate(id) {
   const success = duplicateStandee(id);
   if (success) {
+    enhanceAllStandeesWithMetadata();
     drawPreview();
   }
 }
 
 function drawPreview() {
-  console.log('drawPreview called, standeeImages:', standeeImages.value.length);
-  console.log('previewRef.value:', previewRef.value);
-
   if (standeeImages.value.length === 0) {
     if (previewRef.value) {
       previewRef.value.resetContainer();
@@ -162,35 +262,7 @@ function drawPreview() {
     return;
   }
 
-  console.log('sheetLayout:', sheetLayout.value);
   const container = previewRef.value.getContainer();
-  console.log('Preview container:', container);
-
-  // Add CSS diagnostics
-  if (container) {
-    const containerStyle = window.getComputedStyle(container);
-    console.log('Container computed styles:', {
-      display: containerStyle.display,
-      position: containerStyle.position,
-      width: containerStyle.width,
-      height: containerStyle.height,
-      overflow: containerStyle.overflow,
-      visibility: containerStyle.visibility,
-      opacity: containerStyle.opacity,
-      zIndex: containerStyle.zIndex
-    });
-
-    const rect = container.getBoundingClientRect();
-    console.log('Container bounding rect:', {
-      top: rect.top,
-      left: rect.left,
-      width: rect.width,
-      height: rect.height,
-      bottom: rect.bottom,
-      right: rect.right
-    });
-  }
-
   generatePreview(sheetLayout.value, standeeImages.value, container);
 }
 
@@ -265,7 +337,94 @@ watch([standeeImages, standeeSize, perforationEdges], async () => {
   min-width: 300px;
 }
 
-.shared-size-select {
-  min-width: 300px;
+.shared-standee-metadata {
+  padding: 8px;
+  background: #f8f9fa;
+  border-radius: 4px;
+  margin-top: 8px;
+  font-size: 12px;
+}
+
+.metadata-row {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  margin-bottom: 4px;
+}
+
+.metadata-row:last-child {
+  margin-bottom: 0;
+}
+
+.metadata-row label {
+  font-weight: 500;
+  color: #495057;
+  margin-right: 8px;
+}
+
+.metadata-select {
+  padding: 2px 4px;
+  border: 1px solid #ced4da;
+  border-radius: 3px;
+  font-size: 11px;
+  background: white;
+}
+
+.metadata-checkbox-label {
+  display: flex !important;
+  align-items: center;
+  gap: 4px;
+  cursor: pointer;
+}
+
+.metadata-checkbox-label input[type='checkbox'] {
+  margin: 0;
+}
+
+.duplicate-indicator {
+  font-size: 10px;
+  color: #6c757d;
+  font-style: italic;
+}
+
+.batch-metadata-controls {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+}
+
+.batch-control-row {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+
+.batch-control-row label {
+  font-weight: 500;
+  color: #495057;
+  min-width: 80px;
+}
+
+.batch-select {
+  padding: 4px 8px;
+  border: 1px solid #ced4da;
+  border-radius: 4px;
+  background: white;
+  font-size: 12px;
+}
+
+.batch-btn {
+  padding: 4px 8px;
+  border: 1px solid #007bff;
+  background: #007bff;
+  color: white;
+  border-radius: 4px;
+  font-size: 11px;
+  cursor: pointer;
+  transition: background-color 0.2s;
+}
+
+.batch-btn:hover {
+  background: #0056b3;
 }
 </style>
