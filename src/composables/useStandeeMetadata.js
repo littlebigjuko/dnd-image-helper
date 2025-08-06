@@ -9,16 +9,23 @@ export function useStandeeMetadata() {
   };
 
   const calculateImageHash = (imageFile) => {
-    try {
-      const src = imageFile.src || imageFile.dataUrl;
-      return CryptoJS.SHA256(src).toString(CryptoJS.enc.Hex);
-    } catch (error) {
-      return Date.now().toString() + Math.random().toString(36).substr(2, 9);
-    }
+    return new Promise((resolve) => {
+      setTimeout(() => {
+        try {
+          const src = imageFile.src || imageFile.dataUrl;
+          const hash = CryptoJS.SHA256(src).toString(CryptoJS.enc.Hex);
+          resolve(hash);
+        } catch (error) {
+          const fallbackHash =
+            Date.now().toString() + Math.random().toString(36).substr(2, 9);
+          resolve(fallbackHash);
+        }
+      }, 0);
+    });
   };
 
-  const enhanceStandeeWithMetadata = (standee, existingStandees = []) => {
-    const imageHash = calculateImageHash(standee.file || standee.image);
+  const enhanceStandeeWithMetadata = async (standee, existingStandees = []) => {
+    const imageHash = await calculateImageHash(standee.file || standee.image);
 
     const duplicateNumber = calculateDuplicateNumber(
       imageHash,

@@ -225,15 +225,15 @@ async function onFiles(files) {
   const ok = await processFiles(files);
 
   if (ok) {
-    enhanceAllStandeesWithMetadata();
+    await enhanceAllStandeesWithMetadata();
     drawPreview();
   }
 }
 
-function enhanceAllStandeesWithMetadata() {
+async function enhanceAllStandeesWithMetadata() {
   const enhanced = [];
   for (const standee of standeeImages.value) {
-    const enhancedStandee = enhanceStandeeWithMetadata(standee, enhanced);
+    const enhancedStandee = await enhanceStandeeWithMetadata(standee, enhanced);
     enhanced.push(enhancedStandee);
   }
 
@@ -246,10 +246,10 @@ async function remove(i) {
   drawPreview();
 }
 
-function duplicate(id) {
+async function duplicate(id) {
   const success = duplicateStandee(id);
   if (success) {
-    enhanceAllStandeesWithMetadata();
+    await enhanceAllStandeesWithMetadata();
     drawPreview();
   }
 }
