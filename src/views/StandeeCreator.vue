@@ -55,7 +55,7 @@
                 <div class="metadata-row">
                   <label>Type:</label>
                   <select
-                    :value="t.metadata?.combatType || 'none'"
+                    :value="t.combatType || 'none'"
                     @change="
                       updateStandeeMetadataValue(
                         t.id,
@@ -74,7 +74,7 @@
                   <label class="metadata-checkbox-label">
                     <input
                       type="checkbox"
-                      :checked="t.metadata?.isBoss || false"
+                      :checked="t.isBoss || false"
                       @change="
                         updateStandeeMetadataValue(
                           t.id,
@@ -86,12 +86,9 @@
                     Boss
                   </label>
                 </div>
-                <div
-                  class="metadata-row"
-                  v-if="t.metadata?.duplicateNumber > 1"
-                >
+                <div class="metadata-row" v-if="t.duplicateNumber > 1">
                   <span class="duplicate-indicator"
-                    >Copy #{{ t.metadata.duplicateNumber }}</span
+                    >Copy #{{ t.duplicateNumber }}</span
                   >
                 </div>
               </div>

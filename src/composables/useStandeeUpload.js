@@ -98,7 +98,9 @@ export function useStandeeUpload() {
     const duplicatedStandee = {
       id: Date.now() + Math.random(),
       image: standeeToDuplicate.image,
-      name: generateDuplicateName(standeeToDuplicate.name)
+      name: generateDuplicateName(standeeToDuplicate.name),
+      combatType: standeeToDuplicate.combatType || 'none',
+      isBoss: standeeToDuplicate.isBoss || false
     };
 
     standeeImages.value.push(duplicatedStandee);

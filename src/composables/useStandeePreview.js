@@ -160,9 +160,11 @@ export function useStandeePreview() {
     ctx.restore();
   }
 
-  function drawStandeeNumber(ctx, x, y, number, size = 12) {
+  function drawStandeeNumber(ctx, x, y, number, size = 12, rowIndex = 0) {
     const radius = size * 0.4;
     const fontSize = size * 0.6;
+    const isTopLegs = rowIndex % 2 === 1;
+
     ctx.save();
     ctx.fillStyle = 'white';
     ctx.strokeStyle = 'black';
@@ -177,13 +179,21 @@ export function useStandeePreview() {
     ctx.font = `bold ${fontSize}px Arial`;
     ctx.textAlign = 'center';
     ctx.textBaseline = 'middle';
-    ctx.fillText(number.toString(), x, y);
+
+    if (isTopLegs) {
+      ctx.translate(x, y);
+      ctx.rotate(Math.PI);
+      ctx.fillText(number.toString(), 0, 0);
+    } else {
+      ctx.fillText(number.toString(), x, y);
+    }
 
     ctx.restore();
   }
 
-  function drawCombatTypeIcon(ctx, x, y, type, size = 12) {
+  function drawCombatTypeIcon(ctx, x, y, type, size = 12, rowIndex = 0) {
     const iconSize = size * 0.8;
+    const isTopLegs = rowIndex % 2 === 1;
 
     ctx.save();
     ctx.fillStyle = 'white';
@@ -196,13 +206,22 @@ export function useStandeePreview() {
     ctx.textBaseline = 'middle';
 
     const icon = type === 'melee' ? '⚔️' : '🏹';
-    ctx.fillText(icon, x, y);
+
+    if (isTopLegs) {
+      ctx.translate(x, y);
+      ctx.rotate(Math.PI);
+      ctx.fillText(icon, 0, 0);
+    } else {
+      ctx.fillText(icon, x, y);
+    }
 
     ctx.restore();
   }
 
-  function drawBossIndicator(ctx, x, y, size = 12) {
+  function drawBossIndicator(ctx, x, y, size = 12, rowIndex = 0) {
     const iconSize = size;
+    const isTopLegs = rowIndex % 2 === 1;
+
     ctx.save();
     ctx.fillStyle = '#FFD700';
     ctx.strokeStyle = '#B8860B';
@@ -212,7 +231,14 @@ export function useStandeePreview() {
     ctx.font = `${iconSize}px Arial`;
     ctx.textAlign = 'center';
     ctx.textBaseline = 'middle';
-    ctx.fillText('👑', x, y);
+
+    if (isTopLegs) {
+      ctx.translate(x, y);
+      ctx.rotate(Math.PI);
+      ctx.fillText('👑', 0, 0);
+    } else {
+      ctx.fillText('👑', x, y);
+    }
 
     ctx.restore();
   }
@@ -314,7 +340,8 @@ export function useStandeePreview() {
               currentX + indicatorSize / 2,
               legAreaY,
               t.duplicateNumber,
-              indicatorSize
+              indicatorSize,
+              row
             );
           } else if (type === 'combat') {
             drawCombatTypeIcon(
@@ -322,14 +349,16 @@ export function useStandeePreview() {
               currentX + indicatorSize / 2,
               legAreaY,
               t.combatType,
-              indicatorSize
+              indicatorSize,
+              row
             );
           } else if (type === 'boss') {
             drawBossIndicator(
               ctx,
               currentX + indicatorSize / 2,
               legAreaY,
-              indicatorSize
+              indicatorSize,
+              row
             );
           }
 
