@@ -195,7 +195,9 @@ const { generateStandeeSheets } = useStandeePdfGeneration();
 const {
   enhanceStandeeWithMetadata,
   updateStandeeMetadata,
-  applyMetadataToAll
+  applyMetadataToAll,
+  assignDuplicateNumbers,
+  clearHashCache
 } = useStandeeMetadata();
 
 const uploadAreaRef = ref(null);
@@ -234,7 +236,33 @@ async function enhanceAllStandeesWithMetadata() {
     enhanced.push(enhancedStandee);
   }
 
-  standeeImages.value.splice(0, standeeImages.value.length, ...enhanced);
+  const withCorrectDuplicateNumbers = assignDuplicateNumbers(enhanced);
+  standeeImages.value.splice(
+    0,
+    standeeImages.value.length,
+    ...withCorrectDuplicateNumbers
+  );
+}
+
+async function enhanceSingleStandee(standeeIndex) {
+  const standee = standeeImages.value[standeeIndex];
+  if (!standee || standee.imageHash) return;
+
+  const enhancedStandee = await enhanceStandeeWithMetadata(
+    standee,
+    standeeImages.value.slice(0, standeeIndex)
+  );
+
+  standeeImages.value.splice(standeeIndex, 1, enhancedStandee);
+
+  const withCorrectDuplicateNumbers = assignDuplicateNumbers(
+    standeeImages.value
+  );
+  standeeImages.value.splice(
+    0,
+    standeeImages.value.length,
+    ...withCorrectDuplicateNumbers
+  );
 }
 
 async function remove(i) {
@@ -245,8 +273,16 @@ async function remove(i) {
 
 async function duplicate(id) {
   const success = duplicateStandee(id);
+
   if (success) {
-    await enhanceAllStandeesWithMetadata();
+    const withCorrectDuplicateNumbers = assignDuplicateNumbers(
+      standeeImages.value
+    );
+    standeeImages.value.splice(
+      0,
+      standeeImages.value.length,
+      ...withCorrectDuplicateNumbers
+    );
     drawPreview();
   }
 }
@@ -273,6 +309,7 @@ async function exportPDF() {
 
 function resetAll() {
   clearStandees();
+  clearHashCache();
   if (uploadAreaRef.value) uploadAreaRef.value.resetInput();
   if (previewRef.value) previewRef.value.resetContainer();
 }

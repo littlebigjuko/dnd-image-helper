@@ -8,12 +8,22 @@ export function useStandeeMetadata() {
     imageHash: null
   };
 
+  const hashCache = new Map();
+
   const calculateImageHash = (imageFile) => {
     return new Promise((resolve) => {
       setTimeout(() => {
         try {
           const src = imageFile.src || imageFile.dataUrl;
+
+          const cachedHash = hashCache.get(src);
+          if (cachedHash) {
+            resolve(cachedHash);
+            return;
+          }
+
           const hash = CryptoJS.SHA256(src).toString(CryptoJS.enc.Hex);
+          hashCache.set(src, hash);
           resolve(hash);
         } catch (error) {
           const fallbackHash =
@@ -25,6 +35,10 @@ export function useStandeeMetadata() {
   };
 
   const enhanceStandeeWithMetadata = async (standee, existingStandees = []) => {
+    if (standee.imageHash) {
+      return standee;
+    }
+
     const imageHash = await calculateImageHash(standee.file || standee.image);
 
     const duplicateNumber = calculateDuplicateNumber(
@@ -98,6 +112,10 @@ export function useStandeeMetadata() {
     return groups;
   };
 
+  const clearHashCache = () => {
+    hashCache.clear();
+  };
+
   return {
     defaultMetadata,
     calculateImageHash,
@@ -108,6 +126,7 @@ export function useStandeeMetadata() {
     updateStandeeMetadata,
     getStandeesByType,
     getBossStandees,
-    getStandeeGroups
+    getStandeeGroups,
+    clearHashCache
   };
 }

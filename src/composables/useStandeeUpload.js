@@ -100,7 +100,9 @@ export function useStandeeUpload() {
       image: standeeToDuplicate.image,
       name: generateDuplicateName(standeeToDuplicate.name),
       combatType: standeeToDuplicate.combatType || 'none',
-      isBoss: standeeToDuplicate.isBoss || false
+      isBoss: standeeToDuplicate.isBoss || false,
+      imageHash: standeeToDuplicate.imageHash,
+      duplicateNumber: null
     };
 
     standeeImages.value.push(duplicatedStandee);
