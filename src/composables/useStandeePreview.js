@@ -371,15 +371,15 @@ export function useStandeePreview() {
   }
 
   function generatePreview(layout, standees, containerEl) {
-    if (!layout || !standees?.length || !containerEl) {
+    if (!containerEl) {
       return;
     }
 
-    if (canvas.value) {
-      try {
-        canvas.value.remove();
-      } catch {}
-      canvas.value = null;
+    if (!layout || !standees?.length) {
+      if (canvas.value) {
+        canvas.value = null;
+      }
+      return;
     }
 
     const { el, ctx } = createCanvas(layout, containerEl.offsetWidth || 600);
@@ -388,7 +388,9 @@ export function useStandeePreview() {
     const batch = standees.slice(0, layout.standeesPerPage ?? standees.length);
     renderStandeeSheet(ctx, layout, batch);
 
-    containerEl.innerHTML = '';
+    while (containerEl.firstChild) {
+      containerEl.removeChild(containerEl.firstChild);
+    }
     containerEl.appendChild(el);
   }
 

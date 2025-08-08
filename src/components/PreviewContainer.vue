@@ -1,10 +1,11 @@
 <template>
   <div class="shared-preview-section">
-    <div class="shared-preview-container" ref="containerRef">
+    <div class="shared-preview-container">
       <div class="shared-preview-placeholder" v-if="showPlaceholder">
         <div class="shared-preview-placeholder-icon">{{ placeholderIcon }}</div>
         <div>{{ placeholderText }}</div>
       </div>
+      <div ref="containerRef"></div>
     </div>
   </div>
 </template>
