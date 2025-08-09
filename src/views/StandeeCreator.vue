@@ -1,12 +1,10 @@
 <template>
   <div class="shared-main-content">
     <div class="shared-desktop-layout">
-      <!-- Left: controls -->
       <div class="shared-controls-column">
-        <!-- Upload -->
         <FileUploadArea
           ref="uploadAreaRef"
-          icon="🎯"
+          icon="target"
           upload-text="Drop images or click to browse"
           hint-text="JPEG, PNG, WebP (max 5MB each)"
           accept="image/*"
@@ -14,7 +12,6 @@
           @files-selected="onFiles"
         />
 
-        <!-- List -->
         <div class="shared-standee-list-section">
           <label class="shared-control-label">
             Selected Standees (<span>{{ standeeImages.length }}</span
@@ -96,7 +93,6 @@
           </div>
         </div>
 
-        <!-- Settings -->
         <div class="shared-controls-section">
           <div class="shared-control-group">
             <label class="shared-control-label">Standee Settings</label>
@@ -108,13 +104,11 @@
                   <option value="medium">Medium (4.5cm height)</option>
                   <option value="large">Large (6cm height)</option>
                   <option value="very-large">Very Large (8.5cm height)</option>
-                  <!-- <option value="colossal">Colossal (15cm height)</option> -->
                 </select>
               </div>
             </div>
           </div>
 
-          <!-- Batch Metadata Operations -->
           <div class="shared-control-group" v-if="standeeImages.length > 0">
             <label class="shared-control-label">Batch Operations</label>
             <div class="batch-metadata-controls">
@@ -140,7 +134,6 @@
             </div>
           </div>
 
-          <!-- Actions -->
           <div class="shared-control-group">
             <label class="shared-control-label">Actions</label>
             <div class="shared-action-buttons">
@@ -149,21 +142,21 @@
                 :disabled="standeeImages.length === 0"
                 @click="exportPDF"
               >
-                📄 Generate Standee Sheets
+                <FileText :size="16" class="inline-icon" /> Generate Standee
+                Sheets
               </button>
               <button class="shared-btn shared-btn-secondary" @click="resetAll">
-                🔄 Reset
+                <RotateCcw :size="16" class="inline-icon" /> Reset
               </button>
             </div>
           </div>
         </div>
       </div>
 
-      <!-- Right: preview -->
       <div class="shared-preview-column">
         <PreviewContainer
           ref="previewRef"
-          placeholder-icon="🎯"
+          placeholder-icon="target"
           placeholder-text="Upload images to see the sheet preview"
           :show-placeholder="standeeImages.length === 0"
         />
@@ -173,6 +166,7 @@
 </template>
 
 <script setup>
+import { FileText, RotateCcw } from 'lucide-vue-next';
 import { nextTick, ref, watch } from 'vue';
 import FileUploadArea from '../components/FileUploadArea.vue';
 import PreviewContainer from '../components/PreviewContainer.vue';
@@ -189,7 +183,7 @@ const {
   duplicateStandee,
   clearStandees
 } = useStandeeUpload();
-const { standeeSize, perforationEdges, sheetLayout } = useStandeeLayout();
+const { standeeSize, sheetLayout } = useStandeeLayout();
 const { generatePreview, renderStandeeSheet } = useStandeePreview();
 const { generateStandeeSheets } = useStandeePdfGeneration();
 const {
@@ -203,6 +197,12 @@ const {
 const uploadAreaRef = ref(null);
 const previewRef = ref(null);
 const batchCombatType = ref('none');
+
+let previewRaf = 0;
+function schedulePreview() {
+  cancelAnimationFrame(previewRaf);
+  previewRaf = requestAnimationFrame(drawPreview);
+}
 
 function updateStandeeMetadataValue(standeeId, key, value) {
   standeeImages.value = updateStandeeMetadata(standeeImages.value, standeeId, {
@@ -222,10 +222,9 @@ function applyBatchBossStatus(isBoss) {
 
 async function onFiles(files) {
   const ok = await processFiles(files);
-
   if (ok) {
     await enhanceAllStandeesWithMetadata();
-    drawPreview();
+    schedulePreview();
   }
 }
 
@@ -235,29 +234,7 @@ async function enhanceAllStandeesWithMetadata() {
     const enhancedStandee = await enhanceStandeeWithMetadata(standee, enhanced);
     enhanced.push(enhancedStandee);
   }
-
   const withCorrectDuplicateNumbers = assignDuplicateNumbers(enhanced);
-  standeeImages.value.splice(
-    0,
-    standeeImages.value.length,
-    ...withCorrectDuplicateNumbers
-  );
-}
-
-async function enhanceSingleStandee(standeeIndex) {
-  const standee = standeeImages.value[standeeIndex];
-  if (!standee || standee.imageHash) return;
-
-  const enhancedStandee = await enhanceStandeeWithMetadata(
-    standee,
-    standeeImages.value.slice(0, standeeIndex)
-  );
-
-  standeeImages.value.splice(standeeIndex, 1, enhancedStandee);
-
-  const withCorrectDuplicateNumbers = assignDuplicateNumbers(
-    standeeImages.value
-  );
   standeeImages.value.splice(
     0,
     standeeImages.value.length,
@@ -268,12 +245,11 @@ async function enhanceSingleStandee(standeeIndex) {
 async function remove(i) {
   removeStandee(i);
   await nextTick();
-  drawPreview();
+  schedulePreview();
 }
 
 async function duplicate(id) {
   const success = duplicateStandee(id);
-
   if (success) {
     const withCorrectDuplicateNumbers = assignDuplicateNumbers(
       standeeImages.value
@@ -283,18 +259,15 @@ async function duplicate(id) {
       standeeImages.value.length,
       ...withCorrectDuplicateNumbers
     );
-    drawPreview();
+    schedulePreview();
   }
 }
 
 function drawPreview() {
   if (standeeImages.value.length === 0) {
-    if (previewRef.value) {
-      previewRef.value.resetContainer();
-    }
+    if (previewRef.value) previewRef.value.resetContainer();
     return;
   }
-
   const container = previewRef.value.getContainer();
   generatePreview(sheetLayout.value, standeeImages.value, container);
 }
@@ -314,9 +287,9 @@ function resetAll() {
   if (previewRef.value) previewRef.value.resetContainer();
 }
 
-watch([standeeImages, standeeSize, perforationEdges], async () => {
+watch([standeeImages, standeeSize], async () => {
   await nextTick();
-  if (standeeImages.value.length) drawPreview();
+  if (standeeImages.value.length) schedulePreview();
 });
 </script>
 
@@ -329,7 +302,6 @@ watch([standeeImages, standeeSize, perforationEdges], async () => {
   right: 4px;
   z-index: 10;
 }
-
 .shared-standee-duplicate,
 .shared-standee-item-remove {
   width: 20px;
@@ -346,31 +318,24 @@ watch([standeeImages, standeeSize, perforationEdges], async () => {
   box-shadow: 0 1px 3px rgba(0, 0, 0, 0.3);
   flex-shrink: 0;
 }
-
 .shared-standee-duplicate {
   background: #28a745;
 }
-
 .shared-standee-duplicate:hover {
   background: #218838;
 }
-
 .shared-standee-item-remove {
   background: #dc3545;
 }
-
 .shared-standee-item-remove:hover {
   background: #c82333;
 }
-
 .shared-standee-item {
   position: relative;
 }
-
 .shared-size-select {
   min-width: 300px;
 }
-
 .shared-standee-metadata {
   padding: 8px;
   background: #f8f9fa;
@@ -378,24 +343,20 @@ watch([standeeImages, standeeSize, perforationEdges], async () => {
   margin-top: 8px;
   font-size: 12px;
 }
-
 .metadata-row {
   display: flex;
   align-items: center;
   justify-content: space-between;
   margin-bottom: 4px;
 }
-
 .metadata-row:last-child {
   margin-bottom: 0;
 }
-
 .metadata-row label {
   font-weight: 500;
   color: #495057;
   margin-right: 8px;
 }
-
 .metadata-select {
   padding: 2px 4px;
   border: 1px solid #ced4da;
@@ -403,42 +364,35 @@ watch([standeeImages, standeeSize, perforationEdges], async () => {
   font-size: 11px;
   background: white;
 }
-
 .metadata-checkbox-label {
   display: flex !important;
   align-items: center;
   gap: 4px;
   cursor: pointer;
 }
-
 .metadata-checkbox-label input[type='checkbox'] {
   margin: 0;
 }
-
 .duplicate-indicator {
   font-size: 10px;
   color: #6c757d;
   font-style: italic;
 }
-
 .batch-metadata-controls {
   display: flex;
   flex-direction: column;
   gap: 8px;
 }
-
 .batch-control-row {
   display: flex;
   align-items: center;
   gap: 8px;
 }
-
 .batch-control-row label {
   font-weight: 500;
   color: #495057;
   min-width: 80px;
 }
-
 .batch-select {
   padding: 4px 8px;
   border: 1px solid #ced4da;
@@ -446,7 +400,6 @@ watch([standeeImages, standeeSize, perforationEdges], async () => {
   background: white;
   font-size: 12px;
 }
-
 .batch-btn {
   padding: 4px 8px;
   border: 1px solid #007bff;
@@ -457,8 +410,12 @@ watch([standeeImages, standeeSize, perforationEdges], async () => {
   cursor: pointer;
   transition: background-color 0.2s;
 }
-
 .batch-btn:hover {
   background: #0056b3;
+}
+.inline-icon {
+  display: inline;
+  vertical-align: middle;
+  margin-right: 0.5rem;
 }
 </style>

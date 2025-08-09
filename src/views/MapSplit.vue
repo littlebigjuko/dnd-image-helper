@@ -4,7 +4,7 @@
       <div class="shared-controls-column">
         <FileUploadArea
           ref="uploadAreaRef"
-          icon="📁"
+          icon="folder"
           upload-text="Drop your image here or click to browse"
           hint-text="Supports JPEG, PNG, WebP, GIF (max 10MB)"
           accept="image/*"
@@ -50,14 +50,14 @@
                 :disabled="!selectedFile"
                 @click="generatePDF"
               >
-                📄 Generate PDF
+                <FileText :size="16" class="inline-icon" /> Generate PDF
               </button>
               <button
                 ref="resetBtnRef"
                 class="shared-btn shared-btn-secondary"
-                @click="resetImageSplitter"
+                @click="resetMapSplit"
               >
-                🔄 Reset
+                <RotateCcw :size="16" class="inline-icon" /> Reset
               </button>
             </div>
           </div>
@@ -67,7 +67,7 @@
       <div class="shared-preview-column">
         <PreviewContainer
           ref="previewContainerRef"
-          placeholder-icon="🖼️"
+          placeholder-icon="image"
           placeholder-text="Upload an image to see the grid preview"
           :show-placeholder="!selectedFile"
         />
@@ -84,7 +84,8 @@
 </template>
 
 <script setup>
-import { onMounted, ref, watch } from 'vue';
+import { FileText, RotateCcw } from 'lucide-vue-next';
+import { ref, watch } from 'vue';
 import FileUploadArea from '../components/FileUploadArea.vue';
 import MessageDisplay from '../components/MessageDisplay.vue';
 import PreviewContainer from '../components/PreviewContainer.vue';
@@ -163,7 +164,7 @@ async function generatePDF() {
   );
 }
 
-function resetImageSplitter() {
+function resetMapSplit() {
   clearFile();
   dismissMessage();
   rows.value = 2;
@@ -181,8 +182,6 @@ watch([selectedFile, rows, cols], () => {
     updatePreview();
   }
 });
-
-onMounted(() => {});
 </script>
 
 <style scoped>
@@ -193,5 +192,11 @@ onMounted(() => {});
 .shared-preview-container {
   flex: 1;
   min-height: 0;
+}
+
+.inline-icon {
+  display: inline;
+  vertical-align: middle;
+  margin-right: 0.5rem;
 }
 </style>

@@ -2,7 +2,6 @@ import { computed, ref } from 'vue';
 
 export function useStandeeLayout() {
   const standeeSize = ref('small');
-  const perforationEdges = ref(false);
 
   const standeeSizes = {
     small: { height: 30, name: 'Small (3cm)' },
@@ -66,10 +65,9 @@ export function useStandeeLayout() {
       standingWhiteSpace: WHITE,
       legSpace: leg,
       foldGap: FOLD_GAP,
-      gridGap: GRID_GAP,
-      perforationEdges: perforationEdges.value
+      gridGap: GRID_GAP
     };
   });
 
-  return { standeeSize, perforationEdges, standeeDimensions, sheetLayout };
+  return { standeeSize, standeeDimensions, sheetLayout };
 }

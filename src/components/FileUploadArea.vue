@@ -8,7 +8,10 @@
       @drop.prevent="handleDrop"
       :class="{ dragover: isDragOver }"
     >
-      <div class="shared-upload-icon">{{ icon }}</div>
+      <div class="shared-upload-icon">
+        <component :is="iconComponent" :size="24" v-if="iconComponent" />
+        <span v-else>{{ icon }}</span>
+      </div>
       <div class="shared-upload-text">{{ uploadText }}</div>
       <div class="shared-upload-hint">{{ hintText }}</div>
     </div>
@@ -24,12 +27,13 @@
 </template>
 
 <script setup>
-import { ref } from 'vue';
+import { Folder, SquareUserRound } from 'lucide-vue-next';
+import { computed, ref } from 'vue';
 
 const props = defineProps({
   icon: {
     type: String,
-    default: '📁'
+    default: 'folder'
   },
   uploadText: {
     type: String,
@@ -53,6 +57,16 @@ const emit = defineEmits(['files-selected', 'drag-over', 'drag-leave']);
 
 const fileInputRef = ref(null);
 const isDragOver = ref(false);
+
+const iconComponent = computed(() => {
+  if (props.icon === 'folder') {
+    return Folder;
+  }
+  if (props.icon === 'target') {
+    return SquareUserRound;
+  }
+  return null;
+});
 
 function triggerFileInput() {
   fileInputRef.value?.click();

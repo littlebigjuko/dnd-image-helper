@@ -1,16 +1,16 @@
 import { createRouter, createWebHistory } from 'vue-router';
-import ImageSplitter from '../views/ImageSplitter.vue';
+import MapSplit from '../views/MapSplit.vue';
 import StandeeCreator from '../views/StandeeCreator.vue';
 
 const routes = [
   {
     path: '/',
-    redirect: '/image-splitter'
+    redirect: '/map-split'
   },
   {
-    path: '/image-splitter',
-    name: 'image-splitter',
-    component: ImageSplitter
+    path: '/map-split',
+    name: 'map-split',
+    component: MapSplit
   },
   {
     path: '/standee-creator',

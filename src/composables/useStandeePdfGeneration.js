@@ -1,28 +1,46 @@
 import { jsPDF } from 'jspdf';
 import { ref } from 'vue';
 
-// Canvas target sizes at ~300 DPI for A4
-const A4_WIDTH_300DPI = 2480; // px
-const A4_HEIGHT_300DPI = 3508; // px
-
 export function useStandeePdfGeneration() {
   const isGenerating = ref(false);
 
   function createStandeeSheetsPDF(layout, standeeImages, renderStandeeSheet) {
     const { pageSize } = layout;
-    const isLandscape = pageSize.width > pageSize.height;
+    const DPI = 300;
+    const mmToPx = DPI / 25.4;
+    const isPortraitLayout = pageSize.height > pageSize.width;
+    const pdfW = Math.max(pageSize.width, pageSize.height);
+    const pdfH = Math.min(pageSize.width, pageSize.height);
+
+    const off = document.createElement('canvas');
+    off.width = Math.round(pdfW * mmToPx);
+    off.height = Math.round(pdfH * mmToPx);
+    const ctx = off.getContext('2d');
+    ctx.imageSmoothingEnabled = true;
+    ctx.imageSmoothingQuality = 'high';
 
     const pdf = new jsPDF({
-      orientation: isLandscape ? 'landscape' : 'portrait',
+      orientation: 'landscape',
       unit: 'mm',
-      format: [pageSize.width, pageSize.height],
+      format: [pdfW, pdfH],
       compress: false
     });
-
     const totalPages = Math.ceil(standeeImages.length / layout.standeesPerPage);
 
     for (let pageIndex = 0; pageIndex < totalPages; pageIndex++) {
-      if (pageIndex > 0) pdf.addPage([pageSize.width, pageSize.height]);
+      if (pageIndex > 0) pdf.addPage([pdfW, pdfH], 'landscape');
+
+      ctx.setTransform(1, 0, 0, 1, 0, 0);
+      ctx.clearRect(0, 0, off.width, off.height);
+
+      ctx.setTransform(mmToPx, 0, 0, mmToPx, 0, 0);
+      if (isPortraitLayout) {
+        ctx.translate(pdfW, 0);
+        ctx.rotate(Math.PI / 2);
+      }
+      ctx._pxScale = mmToPx;
+      ctx.fillStyle = '#fff';
+      ctx.fillRect(0, 0, pageSize.width, pageSize.height);
 
       const startIndex = pageIndex * layout.standeesPerPage;
       const endIndex = Math.min(
@@ -31,36 +49,10 @@ export function useStandeePdfGeneration() {
       );
       const pageStandees = standeeImages.slice(startIndex, endIndex);
 
-      const tempCanvas = document.createElement('canvas');
-      const tempCtx = tempCanvas.getContext('2d');
+      renderStandeeSheet(ctx, layout, pageStandees);
 
-      tempCanvas.width = isLandscape ? A4_HEIGHT_300DPI : A4_WIDTH_300DPI;
-      tempCanvas.height = isLandscape ? A4_WIDTH_300DPI : A4_HEIGHT_300DPI;
-
-      const targetW = tempCanvas.width;
-      const targetH = tempCanvas.height;
-      const scaleX = targetW / pageSize.width;
-      const scaleY = targetH / pageSize.height;
-      const finalScale = Math.min(scaleX, scaleY);
-
-      tempCtx.imageSmoothingEnabled = true;
-      tempCtx.imageSmoothingQuality = 'high';
-      tempCtx.textRenderingOptimization = 'optimizeQuality';
-      tempCtx.scale(finalScale, finalScale);
-
-      renderStandeeSheet(tempCtx, layout, pageStandees);
-
-      const imgData = tempCanvas.toDataURL('image/png');
-      pdf.addImage(
-        imgData,
-        'PNG',
-        0,
-        0,
-        pageSize.width,
-        pageSize.height,
-        '',
-        'NONE'
-      );
+      const imgData = off.toDataURL('image/png');
+      pdf.addImage(imgData, 'PNG', 0, 0, pdfW, pdfH, '', 'NONE');
     }
 
     return pdf;

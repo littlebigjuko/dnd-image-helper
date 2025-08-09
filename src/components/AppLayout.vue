@@ -8,18 +8,20 @@
     <div class="tab-container">
       <div class="tab-buttons">
         <router-link
-          to="/image-splitter"
+          to="/map-split"
           class="tab-button"
-          :class="{ active: $route.path === '/image-splitter' }"
+          :class="{ active: $route.path === '/map-split' }"
         >
-          🖼️ Image Splitter
+          <Map :size="16" class="tab-icon" />
+          Map Split
         </router-link>
         <router-link
           to="/standee-creator"
           class="tab-button"
           :class="{ active: $route.path === '/standee-creator' }"
         >
-          🎯 Standee Creator
+          <SquareUserRound :size="16" class="tab-icon" />
+          Standee Creator
         </router-link>
       </div>
     </div>
@@ -28,7 +30,9 @@
   </div>
 </template>
 
-<script setup></script>
+<script setup>
+import { Map, SquareUserRound } from 'lucide-vue-next';
+</script>
 
 <style scoped>
 .container {
@@ -96,7 +100,13 @@
   border-bottom: 3px solid transparent;
   transition: all 0.2s ease;
   text-decoration: none;
-  display: block;
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+
+.tab-icon {
+  flex-shrink: 0;
 }
 
 .tab-button:hover {
